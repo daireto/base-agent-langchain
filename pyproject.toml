@@ -1,0 +1,9 @@
+[project]
+name = "base-agent-langchain"
+version = "0.1.0"
+description = "Base Agent implementation using LangChain"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "langchain>=1.3.7",
+]
