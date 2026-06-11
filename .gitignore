@@ -8,3 +8,15 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Cache and log files
+*.log
+*.cache
+*.tmp
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+
+# Database files
+*.db
+*.sqlite
