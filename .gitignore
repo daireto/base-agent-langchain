@@ -7,7 +7,8 @@ wheels/
 *.egg-info
 
 # Virtual environments
-.venv
+.venv/
+.env/
 
 # Cache and log files
 *.log
@@ -20,3 +21,9 @@ wheels/
 # Database files
 *.db
 *.sqlite
+*.chroma_db
+*.qdrant_db
+
+# Environment files
+.env
+!.env.example
