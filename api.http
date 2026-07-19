@@ -1,0 +1,21 @@
+GET http://localhost:8000/health/
+
+###
+
+POST http://localhost:8000/agent/invoke/
+Content-Type: application/json
+
+{
+    "input": {
+        "query": "Hola, me llamo Dairo"
+    }
+}
+
+###
+# @prompt thread_id
+GET http://localhost:8000/agent/state/{{thread_id}}
+Content-Type: application/json
+
+###
+
+GET http://localhost:8000/memories/
