@@ -31,7 +31,6 @@ ignore = [
     "PLR0913", # Too many arguments in function definition
     "S104",    # Possible binding to all interfaces
     "RUF012",  # Mutable class attributes should be annotated with `typing.ClassVar`
-    "TC003",   # Move standard library import into a type-checking block
     "TD002",   # Missing author in TODO
     "TD003",   # Missing issue link for this TODO
     "TRY003",  # Avoid specifying long messages outside the exception class
