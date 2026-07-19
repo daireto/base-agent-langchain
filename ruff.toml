@@ -14,18 +14,11 @@ ignore = [
     "B008",    # Do not perform function calls in argument defaults
     "BLE001",  # Do not catch blind exception: `Exception`
     "COM812",  # Trailing comma missing
-    "D100",    # Missing docstring in public module
-    "D101",    # Missing docstring in public class
-    "D102",    # Missing docstring in public method
-    "D103",    # Missing docstring in public function
-    "D104",    # Missing docstring in public package
-    "D105",    # Missing docstring in magic method
-    "D106",    # Missing docstring in public nested class
-    "D107",    # Missing docstring in `__init__`
-    "D203",    # 1 blank line required before class docstring
-    "D213",    # Multi-line docstring summary should start at the second line
+    "D",       # pydocstyle
     "E402",    # Module level import not at top of file
     "E501",    # Line too long
+    "EM101",   # Exception must not use a string literal
+    "EM102",   # Exception must not use an f-string literal
     "FA100",   # Add `from __future__ import annotations`
     "FA102",   # Missing `from __future__ import annotations`
     "FBT001",  # Boolean-typed positional argument in function definition
@@ -38,8 +31,10 @@ ignore = [
     "PLR0913", # Too many arguments in function definition
     "S104",    # Possible binding to all interfaces
     "RUF012",  # Mutable class attributes should be annotated with `typing.ClassVar`
+    "TC003",   # Move standard library import into a type-checking block
     "TD002",   # Missing author in TODO
     "TD003",   # Missing issue link for this TODO
+    "TRY003",  # Avoid specifying long messages outside the exception class
 ]
 
 [lint.per-file-ignores]
