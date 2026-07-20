@@ -1,7 +1,5 @@
 CHECKPOINTER_PATH = '.checkpoints.sqlite'  # TODO: Replace by postgres table
 
-CONVERSATIONS_DB_PATH = '.conversations.sqlite'  # TODO: Replace by postgres table
-
 # Chroma
 CHROMA_DB_DIR = '.chroma_db'  # TODO: Replace by postgres table
 

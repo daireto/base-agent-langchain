@@ -15,7 +15,7 @@ class ModelSettings(BaseModel):
 
 
 class DatabaseConfig(BaseModel):
-    url: Secret[str] = Secret('sqlite+aiosqlite:///./.test.db')
+    url: Secret[str] = Secret('sqlite+aiosqlite:///.conversations.sqlite')
 
 
 class RestServerConfig(BaseModel):
