@@ -23,6 +23,8 @@ from core.pii.handlers.base_handler import BasePIIHandler
 from core.pii.middleware import PIIMiddleware
 from core.prompt_manager import prompt_manager
 
+Supervisor = CompiledStateGraph[Any, Context | None, Any, Any]
+
 supervisor_model = init_chat_model(
     model=settings.supervisor.model,
     temperature=settings.supervisor.temperature,
@@ -115,7 +117,7 @@ async def build_supervisor(
     memory_store: BaseMemoryStore,
     memory_extractor: BaseMemoryExtractor,
     pii_handler: BasePIIHandler,
-) -> AsyncIterator[CompiledStateGraph[Any, Context | None, Any, Any]]:
+) -> AsyncIterator[Supervisor]:
     supervisor = create_agent(
         supervisor_model,
         tools=[soc_agent_tool, uefa_agent_tool, tavily_tool],
