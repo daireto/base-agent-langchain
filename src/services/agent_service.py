@@ -6,15 +6,9 @@ from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage
 from langchain_core.messages.ai import add_ai_message_chunks
 from langchain_core.runnables import RunnableConfig
 from langfuse.langchain import CallbackHandler
-from langgraph.graph.state import CompiledStateGraph
-from langgraph.types import (
-    Command,
-    GraphOutput,
-    Interrupt,
-    StateSnapshot,
-    StreamPart,
-)
+from langgraph.types import Command, GraphOutput, Interrupt, StateSnapshot, StreamPart
 
+from agents.supervisor import Supervisor
 from core.config import settings
 from core.context import Context
 from core.definitions import LANGCHAIN_API_VERSION
@@ -31,6 +25,7 @@ from dtos.agent import (
     AgentToolInterrupt,
 )
 from dtos.common import SSEEvent
+from persistence.repos.base_conversation_repository import BaseConversationRepository
 
 langfuse_handler = CallbackHandler()
 
@@ -38,12 +33,14 @@ langfuse_handler = CallbackHandler()
 class AgentService:
     def __init__(
         self,
-        graph: CompiledStateGraph[Any, Context | None, Any, Any],
+        supervisor: Supervisor,
         *,
         stream_transformer: BasePIIStreamTransformer,
+        conversation_repo: BaseConversationRepository,
     ) -> None:
-        self.__graph = graph
+        self.__graph = supervisor
         self._stream_transformer = stream_transformer
+        self._conversation_repo = conversation_repo  # TODO: Use it
 
         self.default_interrupt_msg = AIMessage(
             content=(
@@ -88,7 +85,7 @@ class AgentService:
                 input_,
                 config=self._get_runnable_config(request),
                 context=context,
-                stream_mode=['messages', 'values'],
+                stream_mode=['messages'],
                 version=LANGCHAIN_API_VERSION,
             ):
                 if event := self._parse_stream_part(
@@ -104,7 +101,18 @@ class AgentService:
 
             state = await self.get_state(request)
             full_msg = state.values['messages'][-1]
-            yield SSEEvent(event='end', data=AgentResponse(message=full_msg))
+
+            if state.interrupts:
+                msg = full_msg if full_msg.content else self.default_interrupt_msg
+                interrupts = self._parse_interrupts_to_response_objects(
+                    state.interrupts
+                )
+                yield SSEEvent(
+                    event='end',
+                    data=AgentResponse(message=msg, interrupts=interrupts),
+                )
+            else:
+                yield SSEEvent(event='end', data=AgentResponse(message=full_msg))
 
         finally:
             if request.thread_id:
@@ -172,42 +180,29 @@ class AgentService:
         ai_msg_chunks_buffer: list[AIMessageChunk],
         thread_id: str,
     ) -> SSEEvent[AgentResponse] | None:
-        if chunk['type'] == 'messages':
-            msg, metadata = chunk['data']
-            if metadata.get('langgraph_node') not in ('model', 'tools'):
-                return None
+        if chunk['type'] != 'messages':
+            return None
 
-            if (
-                isinstance(msg, AIMessageChunk)
-                and not msg.content
-                and msg.tool_call_chunks
-            ):
-                ai_msg_chunks_buffer.append(msg)
-                return None
+        msg, metadata = chunk['data']
+        if metadata.get('langgraph_node') not in ('model', 'tools'):
+            return None
 
-            if ai_msg_chunks_buffer:
-                ai_msg = add_ai_message_chunks(*ai_msg_chunks_buffer)
-                ai_msg_chunks_buffer.clear()
-                return SSEEvent(
-                    event='chunk',
-                    data=AgentResponse(message=ai_msg),
-                )
+        if isinstance(msg, AIMessageChunk) and not msg.content and msg.tool_call_chunks:
+            ai_msg_chunks_buffer.append(msg)
+            return None
 
-            if msg := self._stream_transformer.transform_stream_chunk(msg, thread_id):
-                return SSEEvent(
-                    event='chunk',
-                    data=AgentResponse(message=msg),
-                )
-
-        elif chunk['type'] == 'values' and chunk['interrupts']:
-            msg = self.default_interrupt_msg
-            if flush := self._stream_transformer.flush_buffer(thread_id):
-                msg = flush
-
-            interrupts = self._parse_interrupts_to_response_objects(chunk['interrupts'])
+        if ai_msg_chunks_buffer:
+            ai_msg = add_ai_message_chunks(*ai_msg_chunks_buffer)
+            ai_msg_chunks_buffer.clear()
             return SSEEvent(
-                event='interrupts',
-                data=AgentResponse(message=msg, interrupts=interrupts),
+                event='chunk',
+                data=AgentResponse(message=ai_msg),
+            )
+
+        if msg := self._stream_transformer.transform_stream_chunk(msg, thread_id):
+            return SSEEvent(
+                event='chunk',
+                data=AgentResponse(message=msg),
             )
 
         return None
@@ -253,6 +248,7 @@ class AgentService:
             for action_request, review_config in merged_request_and_review:
                 response_interrupts.append(
                     AgentToolInterrupt(
+                        id=interrupt.id,
                         name=action_request['name'],
                         args=action_request['args'],
                         description=action_request['description'].split('\n', 1)[0],
@@ -270,16 +266,16 @@ class AgentService:
         missing = []
 
         for interrupt in interrupts:
-            command = commands.get(interrupt.name)
+            command = commands.get(interrupt.id)
             if not command:
-                missing.append(interrupt.name)
+                missing.append(f'{interrupt.name} ({interrupt.id})')
                 continue
 
             if command.decision == 'approve':
                 decisions.append({'type': 'approve'})
 
             elif command.decision == 'edit':
-                if not command.edited_action:
+                if not command.edited_args:
                     raise ValueError(
                         f'Edited action is required for interrupt {interrupt.name}'
                     )
@@ -288,8 +284,8 @@ class AgentService:
                     {
                         'type': 'edit',
                         'edited_action': {
-                            'name': command.edited_action.name,
-                            'args': command.edited_action.args,
+                            'name': command.name,
+                            'args': command.edited_args,
                         },
                     }
                 )
