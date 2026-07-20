@@ -6,11 +6,9 @@ from dataclasses import dataclass
 from queue import Queue
 from typing import Any
 
-from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import StateSnapshot
 
-from agents.setup import Resources, setup
-from core.context import Context
+from agents.supervisor import Supervisor
 from dtos.common import SSEEvent
 from services.agent_service import (
     AgentConfig,
@@ -19,16 +17,14 @@ from services.agent_service import (
     AgentService,
     AgentStateResponse,
 )
+from setup import Resources, setup
 
 _STREAM_END = object()
 
 
 @dataclass(slots=True)
 class RuntimeState:
-    supervisor: CompiledStateGraph[Any, Context | None, Any, Any]
-    context: AbstractAsyncContextManager[
-        tuple[CompiledStateGraph[Any, Context | None, Any, Any], Resources]
-    ]
+    context: AbstractAsyncContextManager[tuple[Supervisor, Resources]]
 
 
 class AgentRuntime:
@@ -88,13 +84,11 @@ class AgentRuntime:
     async def _startup(self) -> None:
         ctx = setup()
         supervisor, resources = await ctx.__aenter__()
-        self.__runtime = RuntimeState(
-            supervisor=supervisor,
-            context=ctx,
-        )
+        self.__runtime = RuntimeState(context=ctx)
         self.__service = AgentService(
-            self.__runtime.supervisor,
+            supervisor=supervisor,
             stream_transformer=resources.stream_transformer,
+            conversation_repo=resources.conversation_repo,
         )
 
     async def _shutdown(self) -> None:

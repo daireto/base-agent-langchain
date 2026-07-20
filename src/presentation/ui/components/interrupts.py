@@ -2,7 +2,6 @@ import json
 
 import streamlit as st
 
-from dtos.agent import AgentInterruptEditedAction
 from services.agent_service import AgentInterruptCommand, AgentToolInterrupt
 
 
@@ -78,12 +77,10 @@ def render_interrupts() -> None:
 
 def get_interrupt_commands() -> dict[str, AgentInterruptCommand]:
     return {
-        i.name: AgentInterruptCommand(
+        i.id: AgentInterruptCommand(
+            name=i.name,
             decision=st.session_state.interrupt_decisions[i.name]['decision'],
-            edited_action=AgentInterruptEditedAction(
-                name=i.name,
-                args=st.session_state.interrupt_decisions[i.name]['args'],
-            ),
+            edited_args=st.session_state.interrupt_decisions[i.name]['args'],
             reject_reason=st.session_state.interrupt_decisions[i.name]['reason'],
         )
         for i in st.session_state.interrupts

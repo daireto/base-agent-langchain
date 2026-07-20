@@ -76,7 +76,7 @@ def render_ai(message: AIMessage) -> None:
             st.markdown(str(message.content))
 
 
-def render_streamed_ai(stream: Generator[SSEEvent[AgentResponse]]) -> None:  # noqa: C901, PLR0912
+def render_streamed_ai(stream: Generator[SSEEvent[AgentResponse]]) -> None:  # noqa: C901
     interrupts = None
     full_text = ''
     reset_full_text = False
@@ -84,42 +84,40 @@ def render_streamed_ai(stream: Generator[SSEEvent[AgentResponse]]) -> None:  # n
     placeholder = None
 
     for event in stream:
-        if event.event == 'chunk':
-            if isinstance(event.data.message, ToolMessage):
-                st.session_state.messages.append(event.data.message)
-                render_tool(event.data.message)
-            elif isinstance(event.data.message, AIMessage):
-                tool_calls = [t for t in event.data.message.tool_calls if t['name']]
-                if tool_calls:
-                    reset_full_text = True
-                    st.session_state.messages.append(event.data.message)
-                    with st.chat_message('assistant'):
-                        for tool_call in tool_calls:
-                            render_tool_call(tool_call)
-                elif event.data.message.content:
-                    if reset_full_text:
-                        full_text = ''
-                        reset_full_text = False
-
-                    if ai_msg_container is None:
-                        ai_msg_container = st.chat_message('assistant')
-
-                    with ai_msg_container:
-                        if placeholder is None:
-                            placeholder = st.empty()
-
-                        full_text += str(event.data.message.content)
-                        placeholder.markdown(full_text)
-
-        elif event.event == 'interrupts':
+        if event.event == 'end':
             interrupts = event.data.interrupts
-            with st.chat_message('assistant'):
-                st.markdown(event.data.message.content)
-
-        elif event.event == 'end':
             st.session_state.messages.append(event.data.message)
+            break
+
+        if isinstance(event.data.message, ToolMessage):
+            st.session_state.messages.append(event.data.message)
+            render_tool(event.data.message)
+        elif isinstance(event.data.message, AIMessage):
+            tool_calls = [t for t in event.data.message.tool_calls if t['name']]
+            if tool_calls:
+                reset_full_text = True
+                st.session_state.messages.append(event.data.message)
+                with st.chat_message('assistant'):
+                    for tool_call in tool_calls:
+                        render_tool_call(tool_call)
+            elif event.data.message.content:
+                if reset_full_text:
+                    full_text = ''
+                    reset_full_text = False
+
+                if ai_msg_container is None:
+                    ai_msg_container = st.chat_message('assistant')
+
+                with ai_msg_container:
+                    if placeholder is None:
+                        placeholder = st.empty()
+
+                    full_text += str(event.data.message.content)
+                    placeholder.markdown(full_text)
 
     if interrupts:
+        with st.chat_message('assistant'):
+            st.markdown(event.data.message.content)
         st.session_state.interrupts = interrupts
     else:
         st.session_state.interrupts.clear()
