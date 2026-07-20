@@ -4,7 +4,7 @@ from pydantic import BaseModel, field_serializer
 
 
 class SSEEvent[T: BaseModel](BaseModel):
-    event: Literal['chunk', 'end', 'interrupts']
+    event: Literal['chunk', 'end']
     data: T
 
     @field_serializer('data', when_used='json')
