@@ -21,6 +21,9 @@ wheels/
 # Database files
 *.db
 *.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
 *.chroma_db
 *.qdrant_db
 
