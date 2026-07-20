@@ -1,5 +1,6 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from typing import TYPE_CHECKING
 
 from asgi_correlation_id import CorrelationIdMiddleware
 from fastapi import FastAPI
@@ -7,7 +8,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
-from agents.setup import setup
 from agents.uefa_agent.store import close_qdrant_client
 from core.config import settings
 from presentation.rest.exception_handlers import exception_handlers
@@ -21,6 +21,10 @@ from presentation.rest.routers.agent import router as agent_router
 from presentation.rest.routers.health import router as health_router
 from presentation.rest.routers.memories import router as memories_router
 from services.agent_service import AgentService
+from setup import Resources, setup
+
+if TYPE_CHECKING:
+    from agents.supervisor import Supervisor
 
 
 def register_routers(app: FastAPI) -> None:
@@ -65,9 +69,13 @@ def register_middlewares(app: FastAPI, include_rate_limit: bool = True) -> None:
 
 
 def register_services(app: FastAPI) -> None:
+    supervisor: Supervisor = app.state.supervisor
+    resources: Resources = app.state.resources
+
     app.state.agent_service = AgentService(
-        graph=app.state.supervisor,
-        stream_transformer=app.state.resources.stream_transformer,
+        supervisor=supervisor,
+        stream_transformer=resources.stream_transformer,
+        conversation_repo=resources.conversation_repo,
     )
 
 
