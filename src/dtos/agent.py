@@ -6,29 +6,24 @@ from pydantic import BaseModel, Field
 from utils.uuid import str_uuid7
 
 
-class AgentInterruptEditedAction(BaseModel):
-    name: str = Field(..., description='The name of the edited action.')
-    args: dict[str, Any] = Field(
-        ..., description='The arguments for the edited action.'
-    )
-
-
 class AgentInterruptCommand(BaseModel):
+    name: str = Field(..., description='The name of the interrupt.')
     decision: Literal['approve', 'edit', 'reject'] = Field(
-        ..., description='The decision for the interrupt command.'
+        ..., description='The decision for the action.'
     )
-    edited_action: AgentInterruptEditedAction | None = Field(
-        default=None, description='The edited action if the decision is "edit".'
+    edited_args: dict[str, Any] | None = Field(
+        default=None, description='The edited arguments if the decision is "edit".'
     )
     reject_reason: str | None = Field(
-        default=None, description='The reason for rejecting the interrupt command.'
+        default=None, description='The reason for rejecting the action.'
     )
 
 
 class AgentInput(BaseModel):
     query: str = Field(..., description='The input query for the agent.')
     commands: dict[str, AgentInterruptCommand] | None = Field(
-        default=None, description='The interrupt commands for the agent.'
+        default=None,
+        description='The interrupt commands for the agent. Keyed by the interrupt ID.',
     )
 
 
@@ -53,13 +48,12 @@ class AgentConfig(BaseModel):
 
 
 class AgentToolInterrupt(BaseModel):
-    name: str = Field(..., description='The name of the interrupt tool.')
-    args: dict[str, Any] = Field(
-        ..., description='The arguments for the interrupt tool.'
-    )
-    description: str = Field(..., description='The description of the interrupt tool.')
+    id: str = Field(..., description='The ID of the interrupt.')
+    name: str = Field(..., description='The name of the interrupt.')
+    args: dict[str, Any] = Field(..., description='The arguments for the interrupt.')
+    description: str = Field(..., description='The description of the interrupt.')
     allowed_decisions: list[str] = Field(
-        ..., description='The decisions that are allowed for the interrupt tool.'
+        ..., description='The decisions that are allowed for the interrupt.'
     )
 
 
