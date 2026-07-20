@@ -27,10 +27,11 @@ class MissingInterruptCommandError(Error):
     """Raised when an interrupt command is missing in the input."""
 
     def __init__(self, interrupts: list[str]) -> None:
+        joined = ', '.join(interrupts)
         super().__init__(
             status=409,
             title='Missing Interrupt Command',
-            detail='The interrupt command is missing.',
+            detail=f'The interrupt command is missing for the interrupts: {joined}.',
             code=ErrorCode.MISSING_INTERRUPT_COMMAND,
             extra={'interrupts': interrupts},
         )
