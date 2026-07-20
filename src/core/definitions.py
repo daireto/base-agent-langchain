@@ -15,3 +15,4 @@ LANGCHAIN_API_VERSION = 'v2'
 
 # Defaults
 DEFAULT_USER_ID = 'default_user'
+DEFAULT_LIMIT = 100
