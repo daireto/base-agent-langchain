@@ -37,6 +37,8 @@ langfuse_handler = CallbackHandler()
 
 
 class AgentService:
+    """Service class for handling agent requests and responses."""
+
     def __init__(
         self,
         supervisor: Supervisor,
