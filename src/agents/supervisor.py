@@ -1,4 +1,4 @@
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Any
 
@@ -117,7 +117,7 @@ async def build_supervisor(
     memory_store: BaseMemoryStore,
     memory_extractor: BaseMemoryExtractor,
     pii_handler: BasePIIHandler,
-) -> AsyncIterator[Supervisor]:
+) -> AsyncGenerator[Supervisor]:
     supervisor = create_agent(
         supervisor_model,
         tools=[soc_agent_tool, uefa_agent_tool, tavily_tool],

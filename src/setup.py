@@ -1,4 +1,4 @@
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator
 from contextlib import AsyncExitStack, asynccontextmanager
 from dataclasses import dataclass
 
@@ -36,7 +36,7 @@ class Resources:
 
 
 @asynccontextmanager
-async def setup() -> AsyncIterator[tuple[Supervisor, Resources]]:
+async def setup() -> AsyncGenerator[tuple[Supervisor, Resources]]:
     async with AsyncExitStack() as stack:
         checkpointer_conn = await stack.enter_async_context(
             aiosqlite.connect(CHECKPOINTER_PATH)
