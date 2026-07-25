@@ -23,8 +23,10 @@ class ErrorCode(StrEnum):
     CONVERSATION_NOT_FOUND = 'CONVERSATION_NOT_FOUND'
     INTERRUPT_NAME_MISMATCH = 'INTERRUPT_NAME_MISMATCH'
     INTERRUPT_NOT_FOUND = 'INTERRUPT_NOT_FOUND'
+    INVALID_COMMAND_DECISION = 'INVALID_COMMAND_DECISION'
     MESSAGE_NOT_FOUND = 'MESSAGE_NOT_FOUND'
     MISSING_INTERRUPT_COMMAND = 'MISSING_INTERRUPT_COMMAND'
+    REQUIRED_EDITED_ARGS = 'REQUIRED_EDITED_ARGS'
     UNEXPECTED_ERROR = 'UNEXPECTED_ERROR'
     VALIDATION_ERROR = 'VALIDATION_ERROR'
 
@@ -77,6 +79,19 @@ class InterruptNotFoundError(Error):
         )
 
 
+class InvalidCommandDecisionError(Error):
+    """Raised when a command decision is invalid."""
+
+    def __init__(self, decision: str, interrupt_name: str) -> None:
+        super().__init__(
+            status=400,
+            title='Invalid Command Decision',
+            detail=f'Invalid decision "{decision}" for interrupt "{interrupt_name}".',
+            code=ErrorCode.INVALID_COMMAND_DECISION,
+            extra={'decision': decision, 'interrupt_name': interrupt_name},
+        )
+
+
 class MessageNotFoundError(Error):
     """Raised when a message is not found."""
 
@@ -101,4 +116,17 @@ class MissingInterruptCommandError(Error):
             detail=f'The interrupt command is missing for the interrupts: {joined}.',
             code=ErrorCode.MISSING_INTERRUPT_COMMAND,
             extra={'interrupts': interrupts},
+        )
+
+
+class RequiredEditedArgsError(Error):
+    """Raised when edited_args is required but not provided."""
+
+    def __init__(self, interrupt_name: str) -> None:
+        super().__init__(
+            status=400,
+            title='Edited Args Required',
+            detail=f'Edited args are required for the interrupt "{interrupt_name}".',
+            code=ErrorCode.REQUIRED_EDITED_ARGS,
+            extra={'interrupt_name': interrupt_name},
         )
