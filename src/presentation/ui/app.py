@@ -17,10 +17,11 @@ from presentation.ui.components.runtime import get_runtime
 from presentation.ui.components.sidebar import render_sidebar
 from presentation.ui.components.state import init_session_state
 from services.agent_service import AgentConfig, AgentRequest
+from utils.uuid import uuid7
 
 USER_ID = '123'
 CHAT_ID = '456'
-THREAD_ID = f'user_{USER_ID}_chat_{CHAT_ID}'
+THREAD_ID = uuid7()
 CONFIG_REQUEST = AgentConfig(thread_id=THREAD_ID)
 
 runtime = get_runtime()

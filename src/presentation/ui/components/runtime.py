@@ -7,6 +7,7 @@ from queue import Queue
 from typing import Any
 
 from langgraph.types import StateSnapshot
+from uuid_utils.compat import UUID
 
 from agents.supervisor import Supervisor
 from dtos.common import SSEEvent
@@ -68,7 +69,7 @@ class AgentRuntime:
     def get_state(self, config: AgentConfig) -> StateSnapshot:
         return self._submit(self._service.get_state(config))
 
-    def clean_state(self, thread_id: str) -> None:
+    def clean_state(self, thread_id: UUID) -> None:
         return self._submit(self._service.clean_state(thread_id))
 
     def parse_state_to_response(self, state: StateSnapshot) -> AgentStateResponse:
