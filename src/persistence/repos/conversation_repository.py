@@ -8,7 +8,6 @@ from core.errors import (
     ConversationNotFoundError,
     InterruptNameMismatchError,
     InterruptNotFoundError,
-    MessageNotFoundError,
 )
 from dtos.agent import AgentInterruptCommand, AgentToolInterrupt
 from persistence.models import Conversation, Interrupt, Message
@@ -23,7 +22,7 @@ from persistence.repos.base_conversation_repository import BaseConversationRepos
 class ConversationRepository(BaseConversationRepository):
     async def create_conversation(
         self,
-        user_id: UUID,
+        user_id: str,
         thread_id: UUID,
         title: str | None = None,
         description: str | None = None,
@@ -38,7 +37,7 @@ class ConversationRepository(BaseConversationRepository):
 
     async def get_user_conversations(
         self,
-        user_id: UUID,
+        user_id: str,
         limit: int = DEFAULT_LIMIT,
         skip: int = 0,
     ) -> list[Conversation]:
@@ -57,19 +56,13 @@ class ConversationRepository(BaseConversationRepository):
         conversations = await query.all()
         return list(conversations)
 
-    async def get_conversation(self, conversation_id: UUID) -> Conversation:
-        conversation = await Conversation.get(conversation_id)
-        if not conversation:
-            raise ConversationNotFoundError(conversation_id)
-        return conversation
+    async def get_conversation(self, conversation_id: UUID) -> Conversation | None:
+        return await Conversation.get(conversation_id)
 
-    async def get_conversation_by_thread_id(self, thread_id: UUID) -> Conversation:
-        conversation = await Conversation.where(
-            Conversation.thread_id == thread_id
-        ).one()
-        if not conversation:
-            raise ConversationNotFoundError(thread_id, is_thread_id=True)
-        return conversation
+    async def get_conversation_by_thread_id(
+        self, thread_id: UUID
+    ) -> Conversation | None:
+        return await Conversation.where(Conversation.thread_id == thread_id).one()
 
     async def update_conversation(
         self,
@@ -102,11 +95,11 @@ class ConversationRepository(BaseConversationRepository):
         if conversation := await Conversation.get(conversation_id):
             await conversation.delete()
 
-    async def add_message(
+    async def add_message_to_conversation(
         self,
         conversation_id: UUID,
         lc_message: LCMessage,
-        interrupt: AgentToolInterrupt | None = None,
+        interrupts: list[AgentToolInterrupt] | None = None,
     ) -> Message:
         conversation = await Conversation.get(conversation_id)
         if not conversation:
@@ -115,7 +108,7 @@ class ConversationRepository(BaseConversationRepository):
         message = langchain_message_to_message_model(lc_message)
         message.conversation_id = conversation_id
 
-        if interrupt:
+        if interrupts:
             message.interrupts = [
                 Interrupt(
                     execution_id=interrupt.id,
@@ -124,6 +117,7 @@ class ConversationRepository(BaseConversationRepository):
                     description=interrupt.description,
                     allowed_decisions=interrupt.allowed_decisions,
                 )
+                for interrupt in interrupts
             ]
 
         await message.save()
@@ -137,7 +131,7 @@ class ConversationRepository(BaseConversationRepository):
         self,
         execution_id: str,
         command: AgentInterruptCommand,
-        reviewer_id: UUID,
+        reviewer_id: str | None = None,
     ) -> Interrupt:
         interrupt = await Interrupt.where(Interrupt.execution_id == execution_id).one()
         if not interrupt:
@@ -188,12 +182,11 @@ class ConversationRepository(BaseConversationRepository):
         messages = await self.get_messages(conversation_id, limit, skip)
         return [message_model_to_langchain_message(msg) for msg in messages]
 
-    async def get_message(self, message_id: UUID) -> Message:
-        message = await Message.get(message_id)
-        if not message:
-            raise MessageNotFoundError(message_id)
-        return message
+    async def get_message(self, message_id: UUID) -> Message | None:
+        return await Message.get(message_id)
 
-    async def get_lc_message(self, message_id: UUID) -> LCMessage:
+    async def get_lc_message(self, message_id: UUID) -> LCMessage | None:
         message = await self.get_message(message_id)
+        if not message:
+            return None
         return message_model_to_langchain_message(message)

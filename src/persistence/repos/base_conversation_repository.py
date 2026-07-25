@@ -15,7 +15,7 @@ class BaseConversationRepository(ABC):
     @abstractmethod
     async def create_conversation(
         self,
-        user_id: UUID,
+        user_id: str,
         thread_id: UUID,
         title: str | None = None,
         description: str | None = None,
@@ -51,7 +51,7 @@ class BaseConversationRepository(ABC):
         """
 
     @abstractmethod
-    async def get_conversation(self, conversation_id: UUID) -> Conversation:
+    async def get_conversation(self, conversation_id: UUID) -> Conversation | None:
         """Get a conversation by its ID.
 
         Args:
@@ -59,14 +59,12 @@ class BaseConversationRepository(ABC):
 
         Returns:
             The Conversation object if found, else None.
-
-        Raises:
-            ConversationNotFoundError: If the conversation with the given ID
-                does not exist.
         """
 
     @abstractmethod
-    async def get_conversation_by_thread_id(self, thread_id: UUID) -> Conversation:
+    async def get_conversation_by_thread_id(
+        self, thread_id: UUID
+    ) -> Conversation | None:
         """Get a conversation by its thread ID.
 
         Args:
@@ -74,10 +72,6 @@ class BaseConversationRepository(ABC):
 
         Returns:
             The Conversation object if found, else None.
-
-        Raises:
-            ConversationNotFoundError: If the conversation with the given thread ID
-                does not exist.
         """
 
     @abstractmethod
@@ -113,18 +107,19 @@ class BaseConversationRepository(ABC):
         """
 
     @abstractmethod
-    async def add_message(
+    async def add_message_to_conversation(
         self,
         conversation_id: UUID,
         lc_message: LCMessage,
-        interrupt: AgentToolInterrupt | None = None,
+        interrupts: list[AgentToolInterrupt] | None = None,
     ) -> Message:
         """Add a message to a conversation.
 
         Args:
             conversation_id: The ID of the conversation.
             lc_message: The LangChain message to add.
-            interrupt: Optional AgentToolInterrupt associated with the message.
+            interrupts: Optional list of AgentToolInterrupts associated
+                with the message.
 
         Returns:
             The created Message object.
@@ -138,7 +133,7 @@ class BaseConversationRepository(ABC):
         self,
         execution_id: str,
         command: AgentInterruptCommand,
-        reviewer_id: UUID,
+        reviewer_id: str | None = None,
     ) -> Interrupt:
         """Resume an interrupt by its execution ID.
 
@@ -189,7 +184,7 @@ class BaseConversationRepository(ABC):
         """
 
     @abstractmethod
-    async def get_message(self, message_id: UUID) -> Message:
+    async def get_message(self, message_id: UUID) -> Message | None:
         """Get a message by its ID.
 
         Args:
@@ -197,13 +192,10 @@ class BaseConversationRepository(ABC):
 
         Returns:
             The Message object if found, else None.
-
-        Raises:
-            MessageNotFoundError: If the message with the given ID does not exist.
         """
 
     @abstractmethod
-    async def get_lc_message(self, message_id: UUID) -> LCMessage:
+    async def get_lc_message(self, message_id: UUID) -> LCMessage | None:
         """Get a LangChain message by its ID.
 
         Calls get_message and converts the Message object to a LangChain message.

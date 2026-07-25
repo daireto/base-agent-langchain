@@ -40,7 +40,7 @@ class Conversation(BaseModel):
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid7)
 
-    user_id: Mapped[UUID] = mapped_column(index=True)
+    user_id: Mapped[str] = mapped_column(String(255), index=True)
 
     thread_id: Mapped[UUID] = mapped_column(unique=True, index=True)
 
@@ -147,7 +147,7 @@ class Interrupt(BaseModel):
 
     reject_reason: Mapped[str | None] = mapped_column(Text)
 
-    reviewed_by: Mapped[UUID | None] = mapped_column()
+    reviewed_by: Mapped[str | None] = mapped_column(String(255))
 
     reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
