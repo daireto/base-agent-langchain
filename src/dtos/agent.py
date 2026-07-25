@@ -2,8 +2,9 @@ from typing import Any, Literal
 
 from langchain_core.messages import AnyMessage, BaseMessage
 from pydantic import BaseModel, Field
+from uuid_utils.compat import UUID
 
-from utils.uuid import str_uuid7
+from utils.uuid import uuid7
 
 
 class AgentInterruptCommand(BaseModel):
@@ -28,8 +29,8 @@ class AgentInput(BaseModel):
 
 
 class AgentConfig(BaseModel):
-    thread_id: str = Field(
-        default_factory=str_uuid7, description='The thread ID for the agent.'
+    thread_id: UUID = Field(
+        default_factory=uuid7, description='The thread ID for the agent.'
     )
     metadata: dict[str, Any] = Field(
         default_factory=dict,
@@ -66,6 +67,7 @@ class AgentResponse(BaseModel):
     interrupts: list[AgentToolInterrupt] = Field(
         default_factory=list, description='The interrupts for the agent.'
     )
+    thread_id: UUID = Field(..., description='The thread ID for the agent.')
 
 
 class AgentStateResponse(BaseModel):
