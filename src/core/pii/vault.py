@@ -3,28 +3,41 @@ from typing import TypedDict
 
 
 class VaultData(TypedDict):
+    """Data structure for storing sensitive information in the vault."""
+
     placeholders_map: dict[str, str]
+    """Placeholders map for the data stored in the vault.
+
+    The keys are the placeholders and the values are the actual data.
+    """
 
 
 class Vault(ABC):
+    """Abstract base class for a vault that stores sensitive data."""
+
     @abstractmethod
     def store(self, key: str, data: VaultData) -> None:
-        raise NotImplementedError
+        """Store data in the vault with the given key."""
 
     @abstractmethod
     def retrieve(self, key: str) -> VaultData | None:
-        raise NotImplementedError
+        """Retrieve data from the vault with the given key.
+
+        Returns None if the key does not exist.
+        """
 
     @abstractmethod
     def clear(self, key: str) -> None:
-        raise NotImplementedError
+        """Clear the data associated with the given key."""
 
     @abstractmethod
     def clear_all(self) -> None:
-        raise NotImplementedError
+        """Clear all data in the vault."""
 
 
 class MemoryVault(Vault):
+    """In-memory implementation of the Vault interface."""
+
     def __init__(self) -> None:
         self._vault: dict[str, VaultData] = {}
 
