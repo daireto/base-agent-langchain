@@ -1,6 +1,5 @@
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import TYPE_CHECKING
 
 from asgi_correlation_id import CorrelationIdMiddleware
 from fastapi import FastAPI
@@ -21,19 +20,30 @@ from presentation.rest.routers.agent import router as agent_router
 from presentation.rest.routers.health import router as health_router
 from presentation.rest.routers.memories import router as memories_router
 from services.agent_service import AgentService
-from setup import Resources, setup
-
-if TYPE_CHECKING:
-    from agents.supervisor import Supervisor
+from services.conversation_service import ConversationService
+from services.memory_service import MemoryService
+from setup import AppResources, setup
 
 
 def register_routers(app: FastAPI) -> None:
+    """Register routers in the FastAPI application.
+
+    Args:
+        app: The FastAPI application instance where routers will be registered.
+    """
     app.include_router(agent_router)
     app.include_router(health_router)
     app.include_router(memories_router)
 
 
 def register_middlewares(app: FastAPI, include_rate_limit: bool = True) -> None:
+    """Register middlewares in the FastAPI application.
+
+    Args:
+        app: The FastAPI application instance where middlewares will be registered.
+        include_rate_limit: Whether to include the rate limit middleware.
+            Defaults to True.
+    """
     app.add_middleware(
         SecurityHeadersMiddleware,
         hsts=settings.rest_server.https,
@@ -69,13 +79,23 @@ def register_middlewares(app: FastAPI, include_rate_limit: bool = True) -> None:
 
 
 def register_services(app: FastAPI) -> None:
-    supervisor: Supervisor = app.state.supervisor
-    resources: Resources = app.state.resources
+    """Register services in the FastAPI application state.
+
+    Args:
+        app: The FastAPI application instance where services will be registered.
+    """
+    app_resources: AppResources = app.state.app_resources
 
     app.state.agent_service = AgentService(
-        supervisor=supervisor,
-        stream_transformer=resources.stream_transformer,
-        conversation_repo=resources.conversation_repo,
+        supervisor=app_resources.supervisor,
+        stream_transformer=app_resources.stream_transformer,
+        conversation_repo=app_resources.conversation_repo,
+    )
+    app.state.conversation_service = ConversationService(
+        conversation_repo=app_resources.conversation_repo,
+    )  # TODO: Add router and DTOs
+    app.state.memory_service = MemoryService(
+        memory_store=app_resources.memory_store,
     )
 
 
@@ -83,9 +103,8 @@ def register_services(app: FastAPI) -> None:
 async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     app.state.logger.info('Starting app')
 
-    async with setup() as (supervisor, resources):
-        app.state.supervisor = supervisor
-        app.state.resources = resources
+    async with setup() as app_resources:
+        app.state.app_resources = app_resources
         register_services(app)
 
         app.state.logger.info(settings.rest_server.startup_msg)
@@ -102,6 +121,17 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
 def create_app(
     logs_filepath: str | None = None,
 ) -> FastAPI:
+    """Create the FastAPI application.
+
+    Setups the application with routers and logger.
+    Middlewares are not registered here.
+
+    Args:
+        logs_filepath: Filepath for log rotation.
+
+    Returns:
+        A FastAPI application instance.
+    """
     app = FastAPI(
         debug=settings.rest_server.debug,
         exception_handlers=exception_handlers,
@@ -118,6 +148,7 @@ def create_app(
 
 
 def create_default_app() -> FastAPI:
+    """Calls create_app() and register the middlewares."""
     app = create_app(
         logs_filepath=settings.rest_log.path
         if not settings.rest_server.is_dev
