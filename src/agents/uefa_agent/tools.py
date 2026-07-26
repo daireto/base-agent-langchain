@@ -1,7 +1,7 @@
 from langchain.tools import tool
 from langchain_core.documents import Document
 
-from agents.uefa_agent.store import qdrant_vector_store
+from agents.uefa_agent.store import uefa_store
 from utils.rag import format_docs
 
 
@@ -12,5 +12,5 @@ async def uefa_docs_retriever(query: str) -> tuple[str, list[Document]]:
     Args:
         query: The query to search for
     """
-    documents = await qdrant_vector_store.asimilarity_search(query, k=3)
+    documents = await uefa_store.vector_store.asimilarity_search(query, k=3)
     return format_docs(documents), documents
