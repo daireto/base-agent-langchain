@@ -1,6 +1,6 @@
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 
-from core.config import ModelSettings
+from core.config import ChatModelSettings
 from core.memory.extractor.base_memory_extractor import BaseMemoryExtractor
 from utils.messages import join_messages
 
@@ -15,7 +15,7 @@ class LLMMemoryExtractor(BaseMemoryExtractor):
             the memory extraction process.
     """
 
-    def __init__(self, config: ModelSettings, system_prompt: str) -> None:
+    def __init__(self, config: ChatModelSettings, system_prompt: str) -> None:
         """Initialize a LLMMemoryExtractor.
 
         Args:

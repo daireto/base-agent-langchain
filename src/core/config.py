@@ -6,7 +6,7 @@ from pydantic import BaseModel, Secret, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class ModelSettings(BaseModel):
+class ChatModelSettings(BaseModel):
     model: str = 'gpt-4o-mini'
     temperature: float = 0.2
     max_tokens: int = 2000
@@ -105,11 +105,11 @@ class Settings(BaseSettings):
     virustotal_api_key: SecretStr
     abuseipdb_api_key: SecretStr
 
-    supervisor: ModelSettings = ModelSettings()
-    soc_agent: ModelSettings = ModelSettings()
-    uefa_agent: ModelSettings = ModelSettings()
-    summarization: ModelSettings = ModelSettings()
-    memory_extractor: ModelSettings = ModelSettings()
+    supervisor: ChatModelSettings = ChatModelSettings()
+    soc_agent: ChatModelSettings = ChatModelSettings()
+    uefa_agent: ChatModelSettings = ChatModelSettings()
+    summarization: ChatModelSettings = ChatModelSettings()
+    memory_extractor: ChatModelSettings = ChatModelSettings()
 
     uefa_docs_embeddings_model: str = 'text-embedding-3-small'
     memories_embeddings_model: str = 'text-embedding-3-small'
