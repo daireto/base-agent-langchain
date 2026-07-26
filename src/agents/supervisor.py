@@ -4,7 +4,6 @@ from typing import Any
 
 from langchain.agents import create_agent
 from langchain.agents.middleware import SummarizationMiddleware
-from langchain.chat_models import init_chat_model
 from langchain.messages import ToolMessage
 from langchain.tools import ToolRuntime, tool
 from langchain_core.documents import Document
@@ -25,38 +24,38 @@ from core.prompt_manager import prompt_manager
 
 Supervisor = CompiledStateGraph[Any, Context | None, Any, Any]
 
-supervisor_model = init_chat_model(
-    model=settings.supervisor.model,
-    temperature=settings.supervisor.temperature,
-    max_tokens=settings.supervisor.max_tokens,
-    timeout=settings.supervisor.timeout,
-    max_retries=settings.supervisor.max_retries,
-    base_url=settings.supervisor.base_url,
-)
 
-summarization_model = init_chat_model(
-    model=settings.summarization.model,
-    temperature=settings.summarization.temperature,
-    max_tokens=settings.summarization.max_tokens,
-    timeout=settings.summarization.timeout,
-    max_retries=settings.summarization.max_retries,
-    base_url=settings.summarization.base_url,
-)
+_supervisor_prompt = prompt_manager.get('supervisor_prompt')
+_subagent_request_prompt = prompt_manager.get('subagent_request_prompt')
 
-tavily_tool = TavilySearch(
-    max_results=5,
-    topic='general',
-)
 
-supervisor_prompt = prompt_manager.get('supervisor_prompt')
-subagent_request_prompt = prompt_manager.get('subagent_request_prompt')
+def _get_tavily_tool() -> TavilySearch:
+    """Create and return the Tavily tool."""
+    return TavilySearch(
+        max_results=5,
+        topic='general',
+    )
 
 
 def build_subagent_request_prompt(request: str, runtime: ToolRuntime[Context]) -> str:
+    """Build a prompt for subagent requests.
+
+    Subagent prompts must include a "query" placeholder that will be replaced
+    with the original user message, and a "request" placeholder that will be
+    replaced with the request or question for the subagent.
+
+    Args:
+        request: The request or question for the subagent.
+        runtime: The runtime context of the tool, which includes the state
+            of the conversation and other relevant information.
+
+    Returns:
+        A formatted prompt string for the subagent.
+    """
     original_user_message = next(
         message for message in runtime.state['messages'] if message.type == 'human'
     )
-    return subagent_request_prompt.format(
+    return _subagent_request_prompt.format(
         query=original_user_message.text,
         request=request,
     )
@@ -118,10 +117,24 @@ async def build_supervisor(
     memory_extractor: BaseMemoryExtractor,
     pii_handler: BasePIIHandler,
 ) -> AsyncGenerator[Supervisor]:
+    """Build and yield a supervisor agent with the specified tools and middleware.
+
+    Args:
+        checkpointer: The checkpointer to use for the supervisor agent.
+        memory_store: The memory store to use for the supervisor agent.
+        memory_extractor: The memory extractor to use for the supervisor agent.
+        pii_handler: The PII handler to use for the supervisor agent.
+
+    Yields:
+        A supervisor agent with the specified tools and middleware.
+    """
+    supervisor_model = settings.supervisor.init_chat_model()
+    summarization_model = settings.summarization.init_chat_model()
+
     supervisor = create_agent(
         supervisor_model,
-        tools=[soc_agent_tool, uefa_agent_tool, tavily_tool],
-        system_prompt=supervisor_prompt.format(memory_context='Not found'),
+        tools=[soc_agent_tool, uefa_agent_tool, _get_tavily_tool()],
+        system_prompt=_supervisor_prompt.format(memory_context='Not found'),
         middleware=[
             PIIMiddleware(
                 pii_handler=pii_handler,
@@ -129,7 +142,7 @@ async def build_supervisor(
             MemoryMiddleware(
                 memory_store=memory_store,
                 memory_extractor=memory_extractor,
-                system_prompt=supervisor_prompt,
+                system_prompt=_supervisor_prompt,
             ),
             SummarizationMiddleware(
                 model=summarization_model,
