@@ -12,7 +12,7 @@ SUSPICIOUS_THREAT_THRESHOLD = 3
 MALICIOUS_CONFIDENCE_THRESHOLD = 50
 SUSPICIOUS_CONFIDENCE_THRESHOLD = 25
 
-ip_blacklist = set()
+_ip_blacklist = set()
 
 
 @tool
@@ -22,16 +22,16 @@ def add_ip_to_blacklist(ip: str) -> str:
     Args:
         ip: The IP address to add
     """
-    ip_blacklist.add(ip)
+    _ip_blacklist.add(ip)
     return f'IP {ip} added to blacklist.'
 
 
 @tool
 def get_all_blacklisted_ips() -> str:
     """Get all blacklisted IP addresses."""
-    if not ip_blacklist:
+    if not _ip_blacklist:
         return 'No IPs in the blacklist.'
-    return 'Blacklisted IPs:\n' + '\n'.join(ip_blacklist)
+    return 'Blacklisted IPs:\n' + '\n'.join(_ip_blacklist)
 
 
 @tool
@@ -41,7 +41,7 @@ def is_ip_blacklisted(ip: str) -> str:
     Args:
         ip: The IP address to check
     """
-    return f'IP {ip} is {"blacklisted" if ip in ip_blacklist else "not blacklisted"}.'
+    return f'IP {ip} is {"blacklisted" if ip in _ip_blacklist else "not blacklisted"}.'
 
 
 @tool
@@ -51,8 +51,8 @@ def remove_ip_from_blacklist(ip: str) -> str:
     Args:
         ip: The IP address to remove
     """
-    if ip in ip_blacklist:
-        ip_blacklist.remove(ip)
+    if ip in _ip_blacklist:
+        _ip_blacklist.remove(ip)
         return f'IP {ip} removed from blacklist.'
     return f'IP {ip} not found in blacklist.'
 
