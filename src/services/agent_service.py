@@ -9,9 +9,9 @@ from langfuse.langchain import CallbackHandler
 from langgraph.types import Command, Interrupt, StateSnapshot, StreamPart
 from uuid_utils.compat import UUID
 
+from agents.context import Context
 from agents.supervisor import Supervisor
 from core.config import settings
-from core.context import Context
 from core.definitions import LANGCHAIN_API_VERSION
 from core.errors import (
     InvalidCommandDecisionError,
