@@ -25,6 +25,11 @@ class MemoryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Response
 
     This middleware retrieves relevant memories before the model is invoked and saves
     new memories after the model generates a response.
+
+    Attributes:
+        _memory_store: The memory store used to save and retrieve memories.
+        _memory_extractor: The memory extractor used to extract memories from messages.
+        _system_prompt: The system prompt template used to format the memory context.
     """
 
     def __init__(
@@ -33,9 +38,17 @@ class MemoryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Response
         memory_extractor: BaseMemoryExtractor,
         system_prompt: str,
     ) -> None:
-        self.__memory_store = memory_store
-        self.__memory_extractor = memory_extractor
-        self.__system_prompt = system_prompt
+        """Initialize the MemoryMiddleware.
+
+        Args:
+            memory_store: The memory store used to save and retrieve memories.
+            memory_extractor: The memory extractor used to extract memories
+                from messages.
+            system_prompt: The system prompt template used to format the memory context.
+        """
+        self._memory_store = memory_store
+        self._memory_extractor = memory_extractor
+        self._system_prompt = system_prompt
 
     @override
     async def awrap_model_call(
@@ -55,7 +68,7 @@ class MemoryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Response
             request.messages, request.runtime
         ):
             system_msg = SystemMessage(
-                self.__system_prompt.format(memory_context=memory_context)
+                self._system_prompt.format(memory_context=memory_context)
             )
             return await handler(request.override(system_message=system_msg))
 
@@ -89,7 +102,7 @@ class MemoryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Response
         if not last_user_msg or last_user_idx is None:
             return None
 
-        memories = await self.__memory_store.search(
+        memories = await self._memory_store.search(
             user_id=user_id,
             query=str(last_user_msg.content),
         )
@@ -110,8 +123,8 @@ class MemoryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Response
         if not last_user_msg or last_user_idx is None:
             return
 
-        if memories := await self.__memory_extractor.extract([last_user_msg]):
-            await self.__memory_store.save(
+        if memories := await self._memory_extractor.extract([last_user_msg]):
+            await self._memory_store.save(
                 user_id=user_id,
                 memories=memories,
             )
