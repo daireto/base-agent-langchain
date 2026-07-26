@@ -67,7 +67,7 @@ class AgentRuntime:
         return self._consume(lambda: self._service.stream(request))
 
     def get_state(self, config: AgentConfig) -> StateSnapshot:
-        return self._submit(self._service.get_state(config))
+        return self._submit(self._service.get_state(config.thread_id))
 
     def clean_state(self, thread_id: UUID) -> None:
         return self._submit(self._service.clean_state(thread_id))

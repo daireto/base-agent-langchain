@@ -5,7 +5,7 @@ from fastapi import APIRouter, Request
 from fastapi.sse import EventSourceResponse, ServerSentEvent
 from uuid_utils.compat import UUID
 
-from dtos.agent import AgentConfig, AgentRequest, AgentResponse, AgentStateResponse
+from dtos.agent import AgentRequest, AgentResponse, AgentStateResponse
 
 if TYPE_CHECKING:
     from services.agent_service import AgentService
@@ -40,5 +40,5 @@ async def stream(
 @router.get('/state/{thread_id}')
 async def get_state(request: Request, thread_id: UUID) -> AgentStateResponse:
     agent_service: AgentService = request.app.state.agent_service
-    state = await agent_service.get_state(AgentConfig(thread_id=thread_id))
+    state = await agent_service.get_state(thread_id)
     return agent_service.parse_state_to_response(state)
