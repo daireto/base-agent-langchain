@@ -4,6 +4,7 @@ import streamlit as st
 from langchain_core.messages import HumanMessage
 
 from dtos.agent import AgentInput
+from presentation.ui.components.agent_runtime import get_runtime
 from presentation.ui.components.chat import (
     render_human,
     render_messages,
@@ -13,7 +14,6 @@ from presentation.ui.components.interrupts import (
     get_interrupt_commands,
     render_interrupts,
 )
-from presentation.ui.components.runtime import get_runtime
 from presentation.ui.components.sidebar import render_sidebar
 from presentation.ui.components.state import init_session_state
 from services.agent_service import AgentConfig, AgentRequest
