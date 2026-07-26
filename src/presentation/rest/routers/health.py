@@ -9,8 +9,9 @@ router = APIRouter(
 )
 
 
-@router.get('/')
+@router.get('/', summary='Check the health status of the server.')
 def read_health() -> ServerHealthResponse:
+    """Check the health status of the server."""
     return ServerHealthResponse(
         message='ok'
         if server_health.is_healthy

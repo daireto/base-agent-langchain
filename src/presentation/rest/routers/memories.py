@@ -14,10 +14,11 @@ router = APIRouter(
 )
 
 
-@router.get('/')
+@router.get('/', summary='Get the memories associated with a specific user.')
 async def get_user_memories(
     request: Request, user_id: str = DEFAULT_USER_ID
 ) -> MemoriesResponse:
+    """Get the memories associated with a specific user."""
     memory_service: MemoryService = request.app.state.memory_service
     memories = await memory_service.get_user_memories(user_id)
     return MemoriesResponse(memories=memories, user_id=user_id)
