@@ -8,6 +8,8 @@ from utils.uuid import uuid7
 
 
 class AgentInterruptCommand(BaseModel):
+    """Represents a command for an agent interrupt."""
+
     name: str = Field(..., description='The name of the interrupt.')
     decision: Literal['approve', 'edit', 'reject'] = Field(
         ..., description='The decision for the action.'
@@ -21,6 +23,8 @@ class AgentInterruptCommand(BaseModel):
 
 
 class AgentInput(BaseModel):
+    """Represents the input for an agent call."""
+
     query: str = Field(..., description='The input query for the agent.')
     commands: dict[str, AgentInterruptCommand] | None = Field(
         default=None,
@@ -29,6 +33,8 @@ class AgentInput(BaseModel):
 
 
 class AgentConfig(BaseModel):
+    """Represents the configuration for an agent call."""
+
     thread_id: UUID = Field(
         default_factory=uuid7, description='The thread ID for the agent.'
     )
@@ -49,6 +55,8 @@ class AgentConfig(BaseModel):
 
 
 class AgentToolInterrupt(BaseModel):
+    """Represents an interrupt for an agent tool."""
+
     id: str = Field(..., description='The ID of the interrupt.')
     name: str = Field(..., description='The name of the interrupt.')
     args: dict[str, Any] = Field(..., description='The arguments for the interrupt.')
@@ -59,10 +67,14 @@ class AgentToolInterrupt(BaseModel):
 
 
 class AgentRequest(AgentConfig):
+    """Represents a request to an agent."""
+
     input: AgentInput = Field(..., description='The input for the agent.')
 
 
 class AgentResponse(BaseModel):
+    """Represents the response from an agent."""
+
     message: AnyMessage = Field(..., description='The message returned by the agent.')
     interrupts: list[AgentToolInterrupt] = Field(
         default_factory=list, description='The interrupts for the agent.'
@@ -71,6 +83,8 @@ class AgentResponse(BaseModel):
 
 
 class AgentStateResponse(BaseModel):
+    """Represents the state of an agent."""
+
     messages: list[BaseMessage] = Field(
         ..., description='The messages in the agent state.'
     )

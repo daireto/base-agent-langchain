@@ -4,6 +4,8 @@ from pydantic import BaseModel, field_serializer
 
 
 class SSEEvent[T: BaseModel](BaseModel):
+    """Server-Sent Event (SSE) model for streaming data to clients."""
+
     event: Literal['chunk', 'end']
     data: T
 
