@@ -37,7 +37,13 @@ langfuse_handler = CallbackHandler()
 
 
 class AgentService:
-    """Service class for handling agent requests and responses."""
+    """Service class for handling agent requests and responses.
+
+    Attributes:
+        _graph: The compiled graph that manages the agent's state and execution.
+        _stream_transformer: The stream transformer for handling streaming responses.
+        _conversation_repo: The repository for managing conversations.
+    """
 
     def __init__(
         self,
@@ -53,7 +59,7 @@ class AgentService:
             stream_transformer: The stream transformer to use.
             conversation_repo: The conversation repository to use.
         """
-        self.__graph = supervisor
+        self._graph = supervisor
         self._stream_transformer = stream_transformer
         self._conversation_repo = conversation_repo
 
@@ -84,7 +90,7 @@ class AgentService:
         if response:
             return response
 
-        response = await self.__graph.ainvoke(
+        response = await self._graph.ainvoke(
             input_,
             config=self._get_runnable_config(request),
             context=context,
@@ -138,7 +144,7 @@ class AgentService:
         ai_msg_chunks_buffer: list[AIMessageChunk] = []
 
         try:
-            async for chunk in self.__graph.astream(
+            async for chunk in self._graph.astream(
                 input_,
                 config=self._get_runnable_config(request),
                 context=context,
@@ -192,7 +198,7 @@ class AgentService:
 
     async def get_state(self, thread_id: UUID) -> StateSnapshot:
         """Return the current state of the thread."""
-        return await self.__graph.aget_state(
+        return await self._graph.aget_state(
             config=RunnableConfig(
                 configurable={
                     'thread_id': thread_id,
@@ -202,7 +208,7 @@ class AgentService:
 
     async def clean_state(self, thread_id: UUID) -> None:
         """Clean the state of the thread."""
-        await self.__graph.checkpointer.adelete_thread(thread_id=str(thread_id))  # type: ignore
+        await self._graph.checkpointer.adelete_thread(thread_id=str(thread_id))  # type: ignore
 
     def parse_state_to_response(self, state: StateSnapshot) -> AgentStateResponse:
         """Parse the state snapshot into a response object.
