@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import aiosqlite
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langgraph.types import Checkpointer
+from sqlactive import DBConnection
 
 from agents.supervisor import Supervisor, build_supervisor
 from core.config import settings
@@ -21,12 +22,17 @@ from core.pii.stream_transformers.base_stream_transformer import (
 from core.pii.stream_transformers.pii_stream_transformer import PIIStreamTransformer
 from core.pii.vault import MemoryVault
 from core.prompt_manager import prompt_manager
+from persistence.database import init_database
 from persistence.repos.base_conversation_repository import BaseConversationRepository
 from persistence.repos.conversation_repository import ConversationRepository
 
 
 @dataclass(frozen=True)
-class Resources:
+class AppResources:
+    """Dataclass to hold application resources for dependency injection."""
+
+    db: DBConnection
+    supervisor: Supervisor
     checkpointer: Checkpointer
     memory_store: BaseMemoryStore
     memory_extractor: BaseMemoryExtractor
@@ -36,8 +42,32 @@ class Resources:
 
 
 @asynccontextmanager
-async def setup() -> AsyncGenerator[tuple[Supervisor, Resources]]:
+async def setup() -> AsyncGenerator[AppResources]:
+    """Set up the application resources and yield them.
+
+    This function initializes the database connection, checkpointer, memory store,
+    memory extractor, PII handler, stream transformer, and conversation repository.
+    It then yields an instance of AppResources containing all the initialized resources.
+
+    It ensures that all resources are properly cleaned up after use. So, it is
+    recommended to use this function to manage the lifecycle of application resources
+    in an asynchronous context (e.g., a Starlette-based application).
+
+    Usage:
+        >>> async with setup() as app_resources:
+            # Use app_resources here
+
+        >>> ctx = setup()
+        >>> app_resources = await ctx.__aenter__()
+        >>> # Use app_resources here
+        >>> await ctx.__aexit__(None, None, None)
+
+    Yields:
+        An instance of AppResources containing the initialized resources.
+    """
     async with AsyncExitStack() as stack:
+        db = await stack.enter_async_context(init_database())
+
         checkpointer_conn = await stack.enter_async_context(
             aiosqlite.connect(CHECKPOINTER_PATH)
         )
@@ -64,14 +94,13 @@ async def setup() -> AsyncGenerator[tuple[Supervisor, Resources]]:
             memory_extractor=memory_extractor,
             pii_handler=pii_handler,
         ) as supervisor:
-            yield (
-                supervisor,
-                Resources(
-                    checkpointer=checkpointer,
-                    memory_store=memory_store,
-                    memory_extractor=memory_extractor,
-                    pii_handler=pii_handler,
-                    stream_transformer=stream_transformer,
-                    conversation_repo=conversation_repo,
-                ),
+            yield AppResources(
+                db=db,
+                supervisor=supervisor,
+                checkpointer=checkpointer,
+                memory_store=memory_store,
+                memory_extractor=memory_extractor,
+                pii_handler=pii_handler,
+                stream_transformer=stream_transformer,
+                conversation_repo=conversation_repo,
             )
