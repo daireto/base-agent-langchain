@@ -72,7 +72,7 @@ class RestServerConfig(BaseModel):
         return (
             f'App started in {self.env} mode.'
             f' Listening on port {self.port}.'
-            f' Docs available at {self.swagger_url} and {self.redoc_url}.'
+            f' Docs available at {self.swagger_url} and {self.redoc_url}'
         )
 
 
