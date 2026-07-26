@@ -55,7 +55,7 @@ class AgentService:
         """
         self.__graph = supervisor
         self._stream_transformer = stream_transformer
-        self._conversation_repo = conversation_repo  # TODO: Use it
+        self._conversation_repo = conversation_repo
 
         self.default_interrupt_msg = AIMessage(
             content=(
