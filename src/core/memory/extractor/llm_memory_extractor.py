@@ -1,4 +1,3 @@
-from langchain.chat_models import init_chat_model
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 
 from core.config import ModelSettings
@@ -19,14 +18,7 @@ class LLMMemoryExtractor(BaseMemoryExtractor):
             system_prompt: The system prompt to use for guiding
                 the memory extraction process.
         """
-        self.__llm = init_chat_model(
-            model=config.model,
-            temperature=config.temperature,
-            max_tokens=config.max_tokens,
-            timeout=config.timeout,
-            max_retries=config.max_retries,
-            base_url=config.base_url,
-        )
+        self.__llm = config.init_chat_model()
         self._system_prompt = system_prompt
 
     async def extract(self, messages: list[BaseMessage]) -> list[str]:
