@@ -7,11 +7,18 @@ from typing import Any, TextIO
 
 import structlog
 from asgi_correlation_id import correlation_id
-from fastapi import FastAPI
 from pythonjsonlogger.json import JsonFormatter
+from starlette.applications import Starlette
 
 
 class StreamHandler(logging.StreamHandler):
+    """Custom stream handler that allows for a custom formatter.
+
+    Inherits from logging.StreamHandler and allows for a custom formatter
+    to be set during initialization. If no formatter is provided,
+    the default formatter will be used.
+    """
+
     def __init__(
         self,
         stream: TextIO = sys.stdout,
@@ -33,6 +40,7 @@ def add_correlation_id(
     _method_name: str,
     event_dict: structlog.typing.EventDict,
 ) -> structlog.typing.EventDict:
+    """Processor to add the correlation ID to the log event dictionary."""
     if request_id := correlation_id.get():
         event_dict['request_id'] = request_id
     return event_dict
@@ -63,6 +71,16 @@ def get_logger(
     level: int = logging.INFO,
     handlers: list[logging.Handler] | None = None,
 ) -> structlog.stdlib.BoundLogger:
+    """Get a logger instance with the specified name, level, and handlers.
+
+    Args:
+        name: The name of the logger.
+        level: The level of the logger. Defaults to logging.INFO.
+        handlers: The handlers to add to the logger. Defaults to None.
+
+    Returns:
+        The logger instance.
+    """
     logger = structlog.get_logger(name)
     logger.setLevel(level)
     logger.handlers.clear()
@@ -79,13 +97,45 @@ def get_logger(
 _default_app_logger = get_logger(name='app', level=logging.INFO)
 
 
+def get_app_logger(suffix: str | None = None) -> structlog.stdlib.BoundLogger:
+    """Get a child logger for the application with an optional suffix.
+
+    Args:
+        suffix: The suffix to append to the logger name. Defaults to None.
+
+    Returns:
+        The child logger instance.
+    """
+    if not suffix:
+        return _default_app_logger
+
+    return structlog.stdlib.BoundLogger(
+        logger=_default_app_logger.getChild(suffix),
+        processors=_processors,
+        context=structlog.get_context(_default_app_logger),
+    )
+
+
+_DEFAULT_MAX_BYTES = 1024 * 1024 * 10  # 10 MB
+_DEFAULT_BACKUP_COUNT = 5  # Number of backup files to keep
+
+
 def setup_log_rotation(
     loggers: list[structlog.stdlib.BoundLogger | logging.Logger | str],
     filepath: str,
-    max_bytes: int = 1024 * 1024 * 10,
-    backup_count: int = 5,
+    max_bytes: int = _DEFAULT_MAX_BYTES,
+    backup_count: int = _DEFAULT_BACKUP_COUNT,
     formatter: logging.Formatter | None = None,
 ) -> None:
+    """Set up log rotation for the specified loggers.
+
+    Args:
+        loggers: A list of loggers to set up log rotation for. Can be logger instances or logger names.
+        filepath: The path to the log file.
+        max_bytes: The maximum size of the log file before it is rotated.
+        backup_count: The number of backup files to keep.
+        formatter: The formatter to use for the log file. Defaults to None.
+    """
     path = Path(filepath)
     path.parent.mkdir(parents=True, exist_ok=True)
     file_handler = RotatingFileHandler(
@@ -104,23 +154,20 @@ def setup_log_rotation(
             logger.addHandler(file_handler)
 
 
-def get_app_logger(suffix: str | None = None) -> structlog.stdlib.BoundLogger:
-    if not suffix:
-        return _default_app_logger
-
-    return structlog.stdlib.BoundLogger(
-        logger=_default_app_logger.getChild(suffix),
-        processors=_processors,
-        context=structlog.get_context(_default_app_logger),
-    )
-
-
 def setup_app_logger(
-    app: FastAPI,
+    app: Starlette,
     filepath: str | None = None,
-    max_bytes: int = 1024 * 1024 * 10,
-    backup_count: int = 5,
+    max_bytes: int = _DEFAULT_MAX_BYTES,
+    backup_count: int = _DEFAULT_BACKUP_COUNT,
 ) -> None:
+    """Set up the application logger in the Starlette application state.
+
+    Args:
+        app: The Starlette application instance.
+        filepath: The path to the log file. Defaults to None.
+        max_bytes: The maximum size of the log file before it is rotated.
+        backup_count: The number of backup files to keep.
+    """
     app.state.logger = _default_app_logger
     app.state.get_child_logger = get_app_logger
 
