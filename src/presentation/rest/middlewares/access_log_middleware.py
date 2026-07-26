@@ -12,6 +12,14 @@ from structlog.stdlib import BoundLogger
 
 
 class AccessLogMiddleware(BaseHTTPMiddleware):
+    """Middleware for logging access requests and responses.
+
+    Attributes:
+        _logger: The logger instance for logging access requests and responses.
+        _excluded_path_prefixes: The path prefixes to exclude from access logging.
+        _user_id_extractor: A callable to extract the user ID from the request.
+    """
+
     def __init__(
         self,
         app: ASGIApp,
@@ -19,31 +27,50 @@ class AccessLogMiddleware(BaseHTTPMiddleware):
         excluded_path_prefixes: str | list[str] | None = None,
         user_id_extractor: Callable[[Request], str] | None = None,
     ) -> None:
+        """Initialize the middleware.
+
+        Args:
+            app: The ASGI application to wrap.
+            logger: The logger instance for logging access requests and responses.
+            excluded_path_prefixes: The path prefixes to exclude from access logging.
+                Defaults to None.
+            user_id_extractor: A callable to extract the user ID from the request.
+                Defaults to None.
+        """
         super().__init__(app)
         self._logger = logger
-        self._excluded_path_prefixes = self.__normalize_path_prefixes(
+        self._excluded_path_prefixes = self._normalize_path_prefixes(
             excluded_path_prefixes or ''
         )
-        self._user_id_extractor = user_id_extractor or self.__default_user_id_extractor
+        self._user_id_extractor = user_id_extractor or self._default_user_id_extractor
 
     async def dispatch(
         self,
         request: Request,
         call_next: RequestResponseEndpoint,
     ) -> Response:
+        """Handle an incoming request and log its outcome.
+
+        Args:
+            request: The incoming HTTP request.
+            call_next: The next middleware or endpoint to invoke.
+
+        Returns:
+            The response returned by the downstream application.
+        """
         start_time = time.time()
 
         try:
             response = await call_next(request)
         except Exception as e:
-            await self.__access_log(
+            await self._access_log(
                 request=request,
                 duration_ms=(time.time() - start_time) * 1000,
                 exception=e,
             )
             raise
 
-        await self.__access_log(
+        await self._access_log(
             request=request,
             duration_ms=(time.time() - start_time) * 1000,
             response=response,
@@ -51,14 +78,22 @@ class AccessLogMiddleware(BaseHTTPMiddleware):
 
         return response
 
-    async def __access_log(
+    async def _access_log(
         self,
         request: Request,
         duration_ms: float,
         response: Response | None = None,
         exception: Exception | None = None,
     ) -> None:
-        if self.__check_excluded_path(request.url.path):
+        """Log the outcome of a request based on its response or exception.
+
+        Args:
+            request: The incoming HTTP request.
+            duration_ms: The elapsed request duration in milliseconds.
+            response: The response returned by the downstream application, if any.
+            exception: The exception raised during request handling, if any.
+        """
+        if self._check_excluded_path(request.url.path):
             return
 
         status_code = (
@@ -71,16 +106,27 @@ class AccessLogMiddleware(BaseHTTPMiddleware):
         self._logger.log(
             logging.ERROR if request_failed else logging.INFO,
             'Request failed' if request_failed else 'Request succeeded',
-            **self.__get_log_data(request, status_code, duration_ms, exception),
+            **self._get_log_data(request, status_code, duration_ms, exception),
         )
 
-    def __get_log_data(
+    def _get_log_data(
         self,
         request: Request,
         status_code: int,
         duration_ms: float,
         exception: Exception | None,
     ) -> dict[str, str | int | float | None]:
+        """Build the structured log payload for a request.
+
+        Args:
+            request: The incoming HTTP request.
+            status_code: The HTTP status code for the response.
+            duration_ms: The elapsed request duration in milliseconds.
+            exception: The exception raised during request handling, if any.
+
+        Returns:
+            A dictionary with the log fields for the request.
+        """
         log_data = {
             'request_id': correlation_id.get(),
             'method': request.method,
@@ -97,25 +143,49 @@ class AccessLogMiddleware(BaseHTTPMiddleware):
             'exception': str(exception) if exception else None,
         }
 
-        if self.__check_redirect(status_code):
+        if self._check_redirect(status_code):
             log_data['location'] = request.headers.get('location')
 
         return log_data
 
-    def __check_redirect(self, status_code: int) -> bool:
+    def _check_redirect(self, status_code: int) -> bool:
+        """Return whether the status code indicates a redirect response.
+
+        Args:
+            status_code: The HTTP status code to evaluate.
+
+        Returns:
+            True if the status code corresponds to a redirect response.
+        """
         return (
             status.HTTP_300_MULTIPLE_CHOICES
             <= status_code
             < status.HTTP_400_BAD_REQUEST
         )
 
-    def __check_excluded_path(self, path: str) -> bool:
+    def _check_excluded_path(self, path: str) -> bool:
+        """Return whether the path should be excluded from access logging.
+
+        Args:
+            path: The request path to evaluate.
+
+        Returns:
+            True if the path matches an excluded prefix.
+        """
         if not path.startswith('/'):
             path = '/' + path
 
         return path.startswith(self._excluded_path_prefixes)
 
-    def __normalize_path_prefixes(self, prefixes: str | list[str]) -> tuple[str, ...]:
+    def _normalize_path_prefixes(self, prefixes: str | list[str]) -> tuple[str, ...]:
+        """Normalize path prefixes into a tuple with leading slashes.
+
+        Args:
+            prefixes: A string or list of prefixes to normalize.
+
+        Returns:
+            A tuple of normalized path prefixes.
+        """
         if not prefixes:
             return ()
 
@@ -128,5 +198,13 @@ class AccessLogMiddleware(BaseHTTPMiddleware):
 
         return tuple(normalized)
 
-    def __default_user_id_extractor(self, request: Request) -> str | None:
+    def _default_user_id_extractor(self, request: Request) -> str | None:
+        """Extract the user ID from the request headers.
+
+        Args:
+            request: The incoming HTTP request.
+
+        Returns:
+            The user ID from the request headers, if present.
+        """
         return request.headers.get('x-user-id')
