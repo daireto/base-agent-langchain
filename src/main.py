@@ -1,4 +1,4 @@
-from agents.uefa_agent.store import close_qdrant_client
+from agents.uefa_agent.store import uefa_store
 from core.config import settings
 from presentation.rest.app import create_default_app
 
@@ -19,7 +19,7 @@ if __name__ == '__main__':
             sys.argv = ['streamlit', 'run', 'src/presentation/ui/app.py']
             sys.exit(st_cli.main())
         finally:
-            close_qdrant_client()
+            uefa_store.close()
 
     elif settings.presentation_mode == 'rest':
         import uvicorn

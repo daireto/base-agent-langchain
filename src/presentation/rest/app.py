@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
-from agents.uefa_agent.store import close_qdrant_client
+from agents.uefa_agent.store import uefa_store
 from core.config import settings
 from presentation.rest.exception_handlers import exception_handlers
 from presentation.rest.logger import get_logger, setup_app_logger
@@ -92,7 +92,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
 
         yield
 
-        close_qdrant_client()
+        uefa_store.close()
 
         app.state.logger.info('Stopping app')
 
