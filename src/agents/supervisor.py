@@ -11,10 +11,10 @@ from langchain_tavily import TavilySearch
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Checkpointer
 
+from agents.context import Context
 from agents.soc_agent.agent import soc_agent
 from agents.uefa_agent.agent import uefa_agent
 from core.config import settings
-from core.context import Context
 from core.memory.extractor.base_memory_extractor import BaseMemoryExtractor
 from core.memory.middleware import MemoryMiddleware
 from core.memory.store.base_memory_store import BaseMemoryStore
@@ -74,6 +74,8 @@ async def soc_agent_tool(request: str, runtime: ToolRuntime[Context]) -> str:
 
     Args:
         request: Request or question related to SOC operations.
+        runtime: The runtime context of the tool, which includes the state
+            of the conversation and other relevant information.
     """
     prompt = build_subagent_request_prompt(request, runtime)
     result = await soc_agent.ainvoke(
@@ -95,6 +97,8 @@ async def uefa_agent_tool(
 
     Args:
         request: Question related to UEFA operations.
+        runtime: The runtime context of the tool, which includes the state
+            of the conversation and other relevant information.
     """
     prompt = build_subagent_request_prompt(request, runtime)
     result = await uefa_agent.ainvoke(
