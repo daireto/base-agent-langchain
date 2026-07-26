@@ -47,6 +47,7 @@ def register_middlewares(app: FastAPI, include_rate_limit: bool = True) -> None:
     app.add_middleware(
         SecurityHeadersMiddleware,
         hsts=settings.rest_server.https,
+        exclude_from_csp=['docs', 'redoc']
     )
     app.add_middleware(
         CORSMiddleware,
