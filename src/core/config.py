@@ -1,6 +1,7 @@
 from typing import Literal
 
 from dotenv import find_dotenv
+from langchain.chat_models import BaseChatModel, init_chat_model
 from pydantic import BaseModel, Secret, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -12,6 +13,16 @@ class ModelSettings(BaseModel):
     timeout: int = 30
     max_retries: int = 3
     base_url: str | None = None
+
+    def init_chat_model(self) -> BaseChatModel:
+        return init_chat_model(
+            model=self.model,
+            temperature=self.temperature,
+            max_tokens=self.max_tokens,
+            timeout=self.timeout,
+            max_retries=self.max_retries,
+            base_url=self.base_url,
+        )
 
 
 class DatabaseConfig(BaseModel):
