@@ -11,7 +11,12 @@ langfuse = get_client() if settings.use_langfuse else None
 
 
 class PromptManager:
-    """Manager for retrieving prompt templates from Langfuse or local files."""
+    """Manager for retrieving prompt templates from Langfuse or local files.
+
+    Attributes:
+        _langfuse_enabled: A boolean indicating if Langfuse is enabled.
+        _templates_dir: The directory where local prompt templates are stored.
+    """
 
     def __init__(self) -> None:
         self._langfuse_enabled = langfuse and langfuse.auth_check()
