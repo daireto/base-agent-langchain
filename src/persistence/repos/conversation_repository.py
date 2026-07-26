@@ -20,6 +20,8 @@ from persistence.repos.base_conversation_repository import BaseConversationRepos
 
 
 class ConversationRepository(BaseConversationRepository):
+    """Repository for managing conversations and messages."""
+
     async def create_conversation(
         self,
         user_id: str,
