@@ -8,6 +8,11 @@ from utils.messages import join_messages
 class LLMMemoryExtractor(BaseMemoryExtractor):
     """Memory extractor that uses a language model to extract
     relevant information from a conversation.
+
+    Attributes:
+        _llm: The language model used for memory extraction.
+        _system_prompt: The system prompt to use for guiding
+            the memory extraction process.
     """
 
     def __init__(self, config: ModelSettings, system_prompt: str) -> None:
@@ -18,13 +23,13 @@ class LLMMemoryExtractor(BaseMemoryExtractor):
             system_prompt: The system prompt to use for guiding
                 the memory extraction process.
         """
-        self.__llm = config.init_chat_model()
+        self._llm = config.init_chat_model()
         self._system_prompt = system_prompt
 
     async def extract(self, messages: list[BaseMessage]) -> list[str]:
         conversation = join_messages(messages)
 
-        response = await self.__llm.ainvoke(
+        response = await self._llm.ainvoke(
             [
                 SystemMessage(content=self._system_prompt),
                 HumanMessage(content=conversation),

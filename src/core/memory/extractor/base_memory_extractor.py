@@ -15,4 +15,11 @@ class BaseMemoryExtractor(ABC):
 
         Returns:
             A list of strings containing the extracted information.
+
+        Examples:
+            >>> extractor = SomeMemoryExtractor()
+            >>> messages = [HumanMessage(content="My name is John."), HumanMessage(content="I like programming.")]
+            >>> memories = await extractor.extract(messages)
+            >>> print(memories)
+            ['User is named John', 'Likes programming']
         """
