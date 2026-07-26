@@ -16,7 +16,14 @@ from utils.messages import get_last_ai_message, get_last_user_message
 
 
 class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
-    """Detect and handle Personally Identifiable Information (PII) in conversations."""
+    """Detect and handle Personally Identifiable Information (PII) in conversations.
+
+    Attributes:
+        _pii_handler: The PII handler used for anonymization and deanonymization.
+        anonymize_input: Whether to anonymize the input messages.
+        anonymize_tool_results: Whether to anonymize the tool results.
+        deanonymize_output: Whether to deanonymize the output messages.
+    """
 
     def __init__(
         self,
@@ -25,6 +32,14 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
         anonymize_tool_results: bool = True,
         deanonymize_output: bool = True,
     ) -> None:
+        """Initialize the PIIMiddleware.
+
+        Args:
+            pii_handler: The PII handler used for anonymization and deanonymization.
+            anonymize_input: Whether to anonymize the input messages. Defaults to True.
+            anonymize_tool_results: Whether to anonymize the tool results. Defaults to True.
+            deanonymize_output: Whether to deanonymize the output messages. Defaults to True.
+        """
         self._pii_handler = pii_handler
         self.anonymize_input = anonymize_input
         self.anonymize_tool_results = anonymize_tool_results
@@ -108,8 +123,19 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
     def _anonymize_input(
         self, messages: list[AnyMessage], thread_id: str
     ) -> tuple[HumanMessage | None, int | None]:
-        """Apply PII handling to the last user message."""
+        """Anonymize the last user message in the conversation.
+
+        Args:
+            messages: The list of messages in the conversation.
+            thread_id: The thread ID used for vault storage and retrieval.
+
+        Returns:
+            A tuple containing the updated HumanMessage (if modified)
+            and its index in the messages list. If no modifications were made,
+            returns (None, None).
+        """
         last_user_msg, last_user_idx = get_last_user_message(messages)
+
         if last_user_idx is not None and last_user_msg and last_user_msg.content:
             content = str(last_user_msg.content)
             new_content = self._anonymize(content, vault_key=thread_id)
@@ -118,6 +144,7 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
                 id=last_user_msg.id,
                 name=last_user_msg.name,
             )
+
             return updated_message, last_user_idx
 
         return None, None
@@ -125,8 +152,22 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
     def _anonymize_tool_results(
         self, messages: list[AnyMessage], thread_id: str
     ) -> tuple[ToolMessage | None, int | None]:
-        """Apply PII handling to the tool messages after the last AI message."""
+        """Anonymize the tool results in the conversation.
+
+        Takes the list of messages and the thread ID, finds the last AI message,
+        and then processes all subsequent tool messages to anonymize their content.
+
+        Args:
+            messages: The list of messages in the conversation.
+            thread_id: The thread ID used for vault storage and retrieval.
+
+        Returns:
+            A tuple containing the updated ToolMessage (if modified)
+            and its index in the messages list. If no modifications were made,
+            returns (None, None).
+        """
         last_ai_msg, last_ai_idx = get_last_ai_message(messages)
+
         if last_ai_idx is not None and last_ai_msg and last_ai_msg.content:
             # Get all tool messages after the last AI message
             for i in range(last_ai_idx + 1, len(messages)):
@@ -146,6 +187,7 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
                     name=tool_msg.name,
                     tool_call_id=tool_msg.tool_call_id,
                 )
+
                 return updated_message, i
 
         return None, None
@@ -153,6 +195,16 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
     def _deanonymize_output(
         self, messages: list[AnyMessage], thread_id: str
     ) -> tuple[AIMessage | None, int | None]:
+        """De-anonymize the last AI message in the conversation.
+
+        Args:
+            messages: The list of messages in the conversation.
+            thread_id: The thread ID used for vault storage and retrieval.
+
+        Returns:
+            A tuple containing the updated AIMessage (if modified) and its index
+            in the messages list. If no modifications were made, returns (None, None).
+        """
         last_ai_msg, last_ai_idx = get_last_ai_message(messages)
         if last_ai_idx is None or not last_ai_msg or not last_ai_msg.content:
             return None, None
@@ -165,6 +217,7 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
             name=last_ai_msg.name,
             tool_calls=last_ai_msg.tool_calls,
         )
+
         return updated_message, last_ai_idx
 
     def _anonymize(self, content: str, vault_key: str) -> str:

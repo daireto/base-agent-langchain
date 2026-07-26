@@ -36,7 +36,11 @@ class Vault(ABC):
 
 
 class MemoryVault(Vault):
-    """In-memory implementation of the Vault interface."""
+    """In-memory implementation of the Vault interface.
+
+    Attributes:
+        _vault: A dictionary that stores the vault data in memory.
+    """
 
     def __init__(self) -> None:
         self._vault: dict[str, VaultData] = {}

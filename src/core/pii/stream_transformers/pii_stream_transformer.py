@@ -9,11 +9,25 @@ _DEFAULT_STREAM_LOOKBACK = 32
 
 
 class PIIStreamTransformer(BasePIIStreamTransformer):
+    """A stream transformer that handles PII anonymization and deanonymization.
+
+    Attributes:
+        _pii_handler: The PII handler used for anonymization and deanonymization.
+        _buffers: A dictionary to hold buffered content for each thread.
+        _lookback: The number of characters to keep in the buffer for each thread.
+    """
+
     def __init__(
         self,
         pii_handler: BasePIIHandler,
         lookback: int = _DEFAULT_STREAM_LOOKBACK,
     ) -> None:
+        """Initialize the PIIStreamTransformer.
+
+        Args:
+            pii_handler: The PII handler used for anonymization and deanonymization.
+            lookback: The number of characters to keep in the buffer for each thread.
+        """
         self._pii_handler = pii_handler
         self._buffers: dict[str, str] = {}
         self._lookback = lookback

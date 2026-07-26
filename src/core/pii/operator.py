@@ -5,6 +5,19 @@ from presidio_anonymizer.services.validators import validate_parameter
 
 
 class PlaceholderMask(Operator):
+    """An operator that replaces PII entities with a placeholder.
+
+    Attributes:
+        COUNTER: A constant string used as a key for the counter in the parameters.
+
+    Examples:
+        >>> operator = PlaceholderMask()
+        >>> operator.operate("John Doe", {"entity_type": "PERSON"})
+        '<PERSON_1>'
+        >>> operator.operate("Jane Smith", {"entity_type": "PERSON"})
+        '<PERSON_2>'
+    """
+
     COUNTER = 'counter'
 
     def operate(self, text: str, params: dict) -> str:  # noqa: ARG002
