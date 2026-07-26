@@ -201,7 +201,7 @@ class AgentService:
         return await self._graph.aget_state(
             config=RunnableConfig(
                 configurable={
-                    'thread_id': thread_id,
+                    'thread_id': str(thread_id),
                 },
             )
         )
@@ -394,7 +394,7 @@ class AgentService:
 
         return RunnableConfig(
             configurable={
-                'thread_id': config_request.thread_id,
+                'thread_id': str(config_request.thread_id),
             },
             tags=config_request.tags,
             metadata=config_request.metadata,
