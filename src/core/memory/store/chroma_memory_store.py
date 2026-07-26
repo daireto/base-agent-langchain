@@ -12,8 +12,13 @@ class Memory(TypedDict):
     """Data structure representing a memory."""
 
     id: str
+    """Unique identifier for the memory."""
+
     content: str
+    """Content of the memory (e.g., 'User is named John Doe', 'Likes pizza')."""
+
     category: str
+    """Category of the memory (e.g., 'name', 'preference')."""
 
 
 class ChromaMemoryStore(BaseMemoryStore):
