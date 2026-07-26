@@ -4,27 +4,36 @@ from uuid import uuid4
 
 import chromadb
 
-from core.definitions import CHROMA_DB_DIR
+from core.definitions import CHROMA_DB_DIR, CHROMA_MEMORIES_COLLECTION
 from core.memory.store.base_memory_store import BaseMemoryStore
 
 
 class Memory(TypedDict):
+    """Data structure representing a memory."""
+
     id: str
     content: str
     category: str
 
 
 class ChromaMemoryStore(BaseMemoryStore):
-    """A memory store that uses ChromaDB to store and retrieve memories."""
+    """A memory store that uses ChromaDB to store and retrieve memories.
+
+    Attributes:
+        _client: The ChromaDB client used to interact with the database.
+        _collection: The ChromaDB collection used to store memories.
+    """
 
     def __init__(self) -> None:
         """Initialize the MemoryStore."""
-        self.__client = chromadb.PersistentClient(path=CHROMA_DB_DIR)
-        self.__collection = self.__client.get_or_create_collection('memories')
+        self._client = chromadb.PersistentClient(path=CHROMA_DB_DIR)
+        self._collection = self._client.get_or_create_collection(
+            CHROMA_MEMORIES_COLLECTION
+        )
 
     async def search(self, user_id: str, query: str, k: int = 5) -> list[str]:
         results = await asyncio.to_thread(
-            self.__collection.query,
+            self._collection.query,
             query_texts=[query],
             where={'user_id': user_id},
             n_results=k,
@@ -49,7 +58,7 @@ class ChromaMemoryStore(BaseMemoryStore):
             )
 
         await asyncio.to_thread(
-            self.__collection.add,
+            self._collection.add,
             ids=ids,
             documents=documents,
             metadatas=metadatas,
@@ -57,7 +66,7 @@ class ChromaMemoryStore(BaseMemoryStore):
 
     async def get_user_memories(self, user_id: str, k: int = 100) -> list[str]:
         results = await asyncio.to_thread(
-            self.__collection.get,
+            self._collection.get,
             where={'user_id': user_id},
             limit=k,
         )
