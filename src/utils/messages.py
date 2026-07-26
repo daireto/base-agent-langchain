@@ -1,3 +1,5 @@
+"""Utility functions for handling LangChain messages."""
+
 from langchain_core.messages import AIMessage, AnyMessage, BaseMessage, HumanMessage
 
 
@@ -17,7 +19,13 @@ def get_last_message_by_type[T: BaseMessage](
     message_type: type[T],
     messages: list[AnyMessage],
 ) -> tuple[T | None, int | None]:
-    """Get the last user message from the list of messages."""
+    """Get the last message of a specific type from a list of messages.
+
+    Returns:
+        A tuple containing the last message of the specified type and
+        its index in the list. If no message of the specified type is found,
+        returns (None, None).
+    """
     last_msg = None
     last_msg_idx = None
     for i in range(len(messages) - 1, -1, -1):
