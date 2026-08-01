@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from typing import Literal, overload
 
 from uuid_utils.compat import UUID
 
@@ -14,7 +15,6 @@ from persistence.models import Conversation, Interrupt, Message
 from persistence.parsers.message_parsers import (
     LCMessage,
     langchain_message_to_message_model,
-    message_model_to_langchain_message,
 )
 from persistence.repos.base_conversation_repository import BaseConversationRepository
 
@@ -37,12 +37,31 @@ class ConversationRepository(BaseConversationRepository):
         )
         return await conversation.save()
 
+    @overload
     async def get_user_conversations(
         self,
         user_id: str,
         limit: int = DEFAULT_LIMIT,
         skip: int = 0,
-    ) -> list[Conversation]:
+        with_count: Literal[False] = False,
+    ) -> list[Conversation]: ...
+
+    @overload
+    async def get_user_conversations(
+        self,
+        user_id: str,
+        limit: int = DEFAULT_LIMIT,
+        skip: int = 0,
+        with_count: Literal[True] = True,
+    ) -> tuple[list[Conversation], int]: ...
+
+    async def get_user_conversations(
+        self,
+        user_id: str,
+        limit: int = DEFAULT_LIMIT,
+        skip: int = 0,
+        with_count: bool = False,
+    ) -> list[Conversation] | tuple[list[Conversation], int]:
         if limit <= 0:
             limit = DEFAULT_LIMIT
 
@@ -56,6 +75,11 @@ class ConversationRepository(BaseConversationRepository):
             query = query.offset(skip)
 
         conversations = await query.all()
+
+        if with_count:
+            count = await Conversation.where(Conversation.user_id == user_id).count()
+            return list(conversations), count
+
         return list(conversations)
 
     async def get_conversation(self, conversation_id: UUID) -> Conversation | None:
@@ -150,12 +174,31 @@ class ConversationRepository(BaseConversationRepository):
 
         return await interrupt.save()
 
+    @overload
     async def get_messages(
         self,
         conversation_id: UUID,
         limit: int = DEFAULT_LIMIT,
         skip: int = 0,
-    ) -> list[Message]:
+        with_count: Literal[False] = False,
+    ) -> list[Message]: ...
+
+    @overload
+    async def get_messages(
+        self,
+        conversation_id: UUID,
+        limit: int = DEFAULT_LIMIT,
+        skip: int = 0,
+        with_count: Literal[True] = True,
+    ) -> tuple[list[Message], int]: ...
+
+    async def get_messages(
+        self,
+        conversation_id: UUID,
+        limit: int = DEFAULT_LIMIT,
+        skip: int = 0,
+        with_count: bool = False,
+    ) -> list[Message] | tuple[list[Message], int]:
         conversation = await Conversation.get(conversation_id)
         if not conversation:
             raise ConversationNotFoundError(conversation_id)
@@ -173,22 +216,14 @@ class ConversationRepository(BaseConversationRepository):
             query = query.offset(skip)
 
         messages = await query.all()
-        return list(messages)
 
-    async def get_lc_messages(
-        self,
-        conversation_id: UUID,
-        limit: int = DEFAULT_LIMIT,
-        skip: int = 0,
-    ) -> list[LCMessage]:
-        messages = await self.get_messages(conversation_id, limit, skip)
-        return [message_model_to_langchain_message(msg) for msg in messages]
+        if with_count:
+            count = await Message.where(
+                Message.conversation_id == conversation_id
+            ).count()
+            return (list(messages), count)
+
+        return list(messages)
 
     async def get_message(self, message_id: UUID) -> Message | None:
         return await Message.get(message_id)
-
-    async def get_lc_message(self, message_id: UUID) -> LCMessage | None:
-        message = await self.get_message(message_id)
-        if not message:
-            return None
-        return message_model_to_langchain_message(message)

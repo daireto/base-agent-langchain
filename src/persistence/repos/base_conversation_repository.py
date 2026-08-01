@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Literal, overload
 
 from uuid_utils.compat import UUID
 
@@ -6,7 +7,10 @@ from core.definitions import DEFAULT_LIMIT
 from core.enums import ConversationStatus
 from dtos.agent import AgentInterruptCommand, AgentToolInterrupt
 from persistence.models import Conversation, Interrupt, Message
-from persistence.parsers.message_parsers import LCMessage
+from persistence.parsers.message_parsers import (
+    LCMessage,
+    message_model_to_langchain_message,
+)
 
 
 class BaseConversationRepository(ABC):
@@ -32,22 +36,45 @@ class BaseConversationRepository(ABC):
             The created Conversation object.
         """
 
+    @overload
+    async def get_user_conversations(
+        self,
+        user_id: str,
+        limit: int = DEFAULT_LIMIT,
+        skip: int = 0,
+        with_count: Literal[False] = False,
+    ) -> list[Conversation]: ...
+
+    @overload
+    async def get_user_conversations(
+        self,
+        user_id: str,
+        limit: int = DEFAULT_LIMIT,
+        skip: int = 0,
+        with_count: Literal[True] = True,
+    ) -> tuple[list[Conversation], int]: ...
+
     @abstractmethod
     async def get_user_conversations(
         self,
         user_id: str,
         limit: int = DEFAULT_LIMIT,
         skip: int = 0,
-    ) -> list[Conversation]:
+        with_count: bool = False,
+    ) -> list[Conversation] | tuple[list[Conversation], int]:
         """Get all conversations for a user.
 
         Args:
             user_id: The ID of the user.
             limit: The maximum number of conversations to return.
             skip: The number of conversations to skip.
+            with_count: Whether to return the total count of conversations
+                along with the list.
 
         Returns:
-            A list of Conversation objects for the user.
+            A list of Conversation objects for the user, or a tuple containing
+            the list of Conversation objects and the total count of conversations
+            if with_count is True.
         """
 
     @abstractmethod
@@ -152,35 +179,48 @@ class BaseConversationRepository(ABC):
                 the expected name.
         """
 
+    @overload
+    async def get_messages(
+        self,
+        conversation_id: UUID,
+        limit: int = DEFAULT_LIMIT,
+        skip: int = 0,
+        with_count: Literal[False] = False,
+    ) -> list[Message]: ...
+
+    @overload
+    async def get_messages(
+        self,
+        conversation_id: UUID,
+        limit: int = DEFAULT_LIMIT,
+        skip: int = 0,
+        with_count: Literal[True] = True,
+    ) -> tuple[list[Message], int]: ...
+
     @abstractmethod
     async def get_messages(
         self,
         conversation_id: UUID,
         limit: int = DEFAULT_LIMIT,
         skip: int = 0,
-    ) -> list[Message]:
+        with_count: bool = False,
+    ) -> list[Message] | tuple[list[Message], int]:
         """Get all messages for a conversation.
 
         Args:
             conversation_id: The ID of the conversation.
+            limit: The maximum number of messages to return.
+            skip: The number of messages to skip.
+            with_count: Whether to return the total count of messages
+                along with the list.
 
         Returns:
-            A list of Message objects for the conversation.
+            A list of Message objects for the conversation, or a tuple containing
+            the list of Message objects and the total count of messages
+            if with_count is True.
 
         Raises:
             ConversationNotFoundError: If the conversation does not exist.
-        """
-
-    @abstractmethod
-    async def get_lc_messages(
-        self,
-        conversation_id: UUID,
-        limit: int = DEFAULT_LIMIT,
-        skip: int = 0,
-    ) -> list[LCMessage]:
-        """Get all LangChain messages for a conversation.
-
-        Calls get_messages and converts the Message objects to LangChain messages.
         """
 
     @abstractmethod
@@ -194,9 +234,27 @@ class BaseConversationRepository(ABC):
             The Message object if found, else None.
         """
 
-    @abstractmethod
+    async def get_lc_messages(
+        self,
+        conversation_id: UUID,
+        limit: int = DEFAULT_LIMIT,
+        skip: int = 0,
+    ) -> list[LCMessage]:
+        """Get all LangChain messages for a conversation.
+
+        Calls get_messages and converts the Message objects to LangChain messages.
+        """
+        messages = await self.get_messages(
+            conversation_id, limit, skip, with_count=False
+        )
+        return [message_model_to_langchain_message(msg) for msg in messages]
+
     async def get_lc_message(self, message_id: UUID) -> LCMessage | None:
         """Get a LangChain message by its ID.
 
         Calls get_message and converts the Message object to a LangChain message.
         """
+        message = await self.get_message(message_id)
+        if not message:
+            return None
+        return message_model_to_langchain_message(message)
