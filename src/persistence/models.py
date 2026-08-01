@@ -26,6 +26,8 @@ class BaseModel(ActiveRecordBaseModel):
         UUID: GUID,
     }
 
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid7)
+
 
 class Conversation(BaseModel):
     __tablename__ = 'conversations'
@@ -37,8 +39,6 @@ class Conversation(BaseModel):
             desc('last_message_at'),
         ),
     )
-
-    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid7)
 
     user_id: Mapped[str] = mapped_column(String(255), index=True)
 
@@ -75,8 +75,6 @@ class Message(BaseModel):
             'id',
         ),
     )
-
-    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid7)
 
     conversation_id: Mapped[UUID] = mapped_column(
         ForeignKey('conversations.id', ondelete='CASCADE'),
@@ -118,8 +116,6 @@ class Message(BaseModel):
 
 class Interrupt(BaseModel):
     __tablename__ = 'interrupts'
-
-    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid7)
 
     message_id: Mapped[UUID] = mapped_column(
         ForeignKey(
