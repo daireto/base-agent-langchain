@@ -17,8 +17,10 @@ from presentation.rest.middlewares.security_headers_middleware import (
     SecurityHeadersMiddleware,
 )
 from presentation.rest.routers.agent import router as agent_router
+from presentation.rest.routers.conversation import router as conversation_router
 from presentation.rest.routers.health import router as health_router
 from presentation.rest.routers.memories import router as memories_router
+from presentation.rest.routers.messages import router as messages_router
 from services.agent_service import AgentService
 from services.conversation_service import ConversationService
 from services.memory_service import MemoryService
@@ -32,8 +34,10 @@ def register_routers(app: FastAPI) -> None:
         app: The FastAPI application instance where routers will be registered.
     """
     app.include_router(agent_router)
+    app.include_router(conversation_router)
     app.include_router(health_router)
     app.include_router(memories_router)
+    app.include_router(messages_router)
 
 
 def register_middlewares(app: FastAPI, include_rate_limit: bool = True) -> None:
@@ -47,7 +51,7 @@ def register_middlewares(app: FastAPI, include_rate_limit: bool = True) -> None:
     app.add_middleware(
         SecurityHeadersMiddleware,
         hsts=settings.rest_server.https,
-        exclude_from_csp=['docs', 'redoc']
+        exclude_from_csp=['docs', 'redoc'],
     )
     app.add_middleware(
         CORSMiddleware,
@@ -94,7 +98,7 @@ def register_services(app: FastAPI) -> None:
     )
     app.state.conversation_service = ConversationService(
         conversation_repo=app_resources.conversation_repo,
-    )  # TODO: Add router and DTOs
+    )
     app.state.memory_service = MemoryService(
         memory_store=app_resources.memory_store,
     )
