@@ -18,21 +18,14 @@ router = APIRouter(
 )
 
 
-@router.post(
-    '/invoke',
-    summary='Invoke the agent with a request and get a response.',
-)
+@router.post('/invoke')
 async def invoke(request: Request, agent_request: AgentRequest) -> AgentResponse:
     """Invoke the agent with a request and wait for a response."""
     agent_service: AgentService = request.app.state.agent_service
     return await agent_service.invoke(agent_request)
 
 
-@router.post(
-    '/stream',
-    response_class=EventSourceResponse,
-    summary='Stream the agent response as Server-Sent Events (SSE).',
-)
+@router.post('/stream', response_class=EventSourceResponse)
 async def stream(
     request: Request, agent_request: AgentRequest
 ) -> AsyncIterable[ServerSentEvent]:
@@ -46,10 +39,7 @@ async def stream(
         )
 
 
-@router.get(
-    '/state/{thread_id}',
-    summary='Get the current state of the agent for a specific thread.',
-)
+@router.get('/state/{thread_id}')
 async def get_state(request: Request, thread_id: UUID) -> AgentStateResponse:
     """Get the current state of the agent for a specific thread."""
     agent_service: AgentService = request.app.state.agent_service
