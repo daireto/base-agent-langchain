@@ -1,13 +1,14 @@
 from typing import Any, Literal
 
 from langchain_core.messages import AnyMessage, BaseMessage
-from pydantic import BaseModel, Field
+from pydantic import Field
 from uuid_utils.compat import UUID
 
+from dtos.base import RequestDTO, ResponseDTO
 from utils.uuid import uuid7
 
 
-class AgentInterruptCommand(BaseModel):
+class AgentInterruptCommand(RequestDTO):
     """Represents a command for an agent interrupt."""
 
     name: str = Field(..., description='The name of the interrupt.')
@@ -22,7 +23,7 @@ class AgentInterruptCommand(BaseModel):
     )
 
 
-class AgentInput(BaseModel):
+class AgentInput(RequestDTO):
     """Represents the input for an agent call."""
 
     query: str = Field(..., description='The input query for the agent.')
@@ -32,7 +33,7 @@ class AgentInput(BaseModel):
     )
 
 
-class AgentConfig(BaseModel):
+class AgentConfig(RequestDTO):
     """Represents the configuration for an agent call."""
 
     thread_id: UUID = Field(
@@ -54,7 +55,13 @@ class AgentConfig(BaseModel):
     )
 
 
-class AgentToolInterrupt(BaseModel):
+class AgentRequest(AgentConfig):
+    """Represents a request to an agent."""
+
+    input: AgentInput = Field(..., description='The input for the agent.')
+
+
+class AgentToolInterrupt(ResponseDTO):
     """Represents an interrupt for an agent tool."""
 
     id: str = Field(..., description='The ID of the interrupt.')
@@ -66,13 +73,7 @@ class AgentToolInterrupt(BaseModel):
     )
 
 
-class AgentRequest(AgentConfig):
-    """Represents a request to an agent."""
-
-    input: AgentInput = Field(..., description='The input for the agent.')
-
-
-class AgentResponse(BaseModel):
+class AgentResponse(ResponseDTO):
     """Represents the response from an agent."""
 
     message: AnyMessage = Field(..., description='The message returned by the agent.')
@@ -82,7 +83,7 @@ class AgentResponse(BaseModel):
     thread_id: UUID = Field(..., description='The thread ID for the agent.')
 
 
-class AgentStateResponse(BaseModel):
+class AgentStateResponse(ResponseDTO):
     """Represents the state of an agent."""
 
     messages: list[BaseMessage] = Field(
