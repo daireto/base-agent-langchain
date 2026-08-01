@@ -1,7 +1,9 @@
-from pydantic import BaseModel, Field
+from pydantic import Field
+
+from dtos.base import ResponseDTO
 
 
-class MemoriesResponse(BaseModel):
+class MemoriesResponse(ResponseDTO):
     """Represents the response for user memories."""
 
     user_id: str = Field(..., description='User ID associated with the memories')

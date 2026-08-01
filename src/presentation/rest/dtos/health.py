@@ -1,7 +1,9 @@
-from pydantic import BaseModel, Field
+from pydantic import Field
+
+from dtos.base import ResponseDTO
 
 
-class ServerHealthResponse(BaseModel):
+class ServerHealthResponse(ResponseDTO):
     """Response model for server health check."""
 
     message: str = Field(..., description='"ok" if healthy, error message otherwise.')
