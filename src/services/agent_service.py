@@ -92,7 +92,7 @@ class AgentService:
 
         response = await self._graph.ainvoke(
             input_,
-            config=self._get_runnable_config(request),
+            config=self._get_runnable_config(request, context),
             context=context,
             version=LANGCHAIN_API_VERSION,
         )
@@ -146,7 +146,7 @@ class AgentService:
         try:
             async for chunk in self._graph.astream(
                 input_,
-                config=self._get_runnable_config(request),
+                config=self._get_runnable_config(request, context),
                 context=context,
                 stream_mode=['messages'],
                 version=LANGCHAIN_API_VERSION,
@@ -374,8 +374,18 @@ class AgentService:
                 return messages[: i + 1]
         return messages
 
-    def _get_runnable_config(self, config_request: AgentConfig) -> RunnableConfig:
-        """Get the RunnableConfig for the agent based on the request and settings."""
+    def _get_runnable_config(
+        self,
+        config_request: AgentConfig,
+        context: Context | None = None,
+    ) -> RunnableConfig:
+        """Get the RunnableConfig for the agent.
+
+        Args:
+            config_request: The configuration request for the agent.
+            context: The context of the agent. This is used to get the user ID for
+                the Langfuse metadata. If not provided, the user ID will be None.
+        """
         max_concurrency = (
             min(config_request.max_concurrency, settings.max_concurrency)
             if config_request.max_concurrency
@@ -388,16 +398,27 @@ class AgentService:
             else settings.max_recursion_limit
         )
 
+        thread_id = str(config_request.thread_id)
+
         callbacks = []
+        metadata = {}
         if settings.use_langfuse:
             callbacks.append(langfuse_handler)
+            metadata = {
+                'langfuse_user_id': context.user_id if context else None,
+                'langfuse_session_id': thread_id,
+                'langfuse_tags': config_request.tags,
+            }
+
+        metadata.update(config_request.metadata)
 
         return RunnableConfig(
             configurable={
-                'thread_id': str(config_request.thread_id),
+                'thread_id': thread_id,
             },
+            run_name=self._graph.name,
             tags=config_request.tags,
-            metadata=config_request.metadata,
+            metadata=metadata,
             callbacks=callbacks,
             max_concurrency=max_concurrency,
             recursion_limit=recursion_limit,
