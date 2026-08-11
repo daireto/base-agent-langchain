@@ -29,6 +29,10 @@ class DatabaseConfig(BaseModel):
     url: Secret[str] = Secret('sqlite+aiosqlite:///.conversations.sqlite')
 
 
+class MemoriesConfig(BaseModel):
+    collection_name: str = 'memories'
+
+
 class RestServerConfig(BaseModel):
     env: Literal['dev', 'prod'] = 'dev'
     port: int = 8000
@@ -93,37 +97,60 @@ class RestRateLimitConfig(BaseModel):
     root_limit: str = '5/second'
 
 
-class RestQueryConfig(BaseModel):
-    max_records_per_page: int = 100
+class RunnableConfig(BaseModel):
+    max_concurrency: int = 10
+    max_recursion_limit: int = 25
+
+
+class SupervisorConfig(ChatModelSettings):
+    checkpointer_url: Secret[str] = Secret('.checkpoints.sqlite')
+
+
+class UefaRagConfig(BaseModel):
+    embeddings_model: str = 'text-embedding-3-small'
+    collection_name: str = 'uefa_docs'
+
+
+class ChromaConfig(BaseModel):
+    mode: Literal['local', 'server'] = 'local'
+    local_db_path: str = '.chroma_db'
+    host: str = 'localhost'
+    port: int = 8001
+    ssl: bool = False
+    api_token: SecretStr = SecretStr('my-secret-token')
+
+
+class QdrantConfig(BaseModel):
+    mode: Literal['local', 'server'] = 'local'
+    local_db_path: str = '.qdrant_db'
+    url: str = 'http://localhost:6333'
+    timeout: int = 30
+    api_key: SecretStr = SecretStr('my-secret-token')
 
 
 class Settings(BaseSettings):
     presentation_mode: Literal['a2a', 'rest', 'ui'] = 'ui'
 
-    use_langfuse: bool = False
+    langfuse_enabled: bool = False
 
     virustotal_api_key: SecretStr
     abuseipdb_api_key: SecretStr
 
-    supervisor: ChatModelSettings = ChatModelSettings()
+    supervisor: SupervisorConfig = SupervisorConfig()
     soc_agent: ChatModelSettings = ChatModelSettings()
     uefa_agent: ChatModelSettings = ChatModelSettings()
     summarization: ChatModelSettings = ChatModelSettings()
     memory_extractor: ChatModelSettings = ChatModelSettings()
-
-    uefa_docs_embeddings_model: str = 'text-embedding-3-small'
-    memories_embeddings_model: str = 'text-embedding-3-small'
-
-    max_concurrency: int = 10
-    max_recursion_limit: int = 25
-
     database: DatabaseConfig = DatabaseConfig()
-
+    memories: MemoriesConfig = MemoriesConfig()
     rest_server: RestServerConfig = RestServerConfig()
     rest_cors: RestCORSConfig = RestCORSConfig()
     rest_log: RestLogConfig = RestLogConfig()
     rest_rate_limit: RestRateLimitConfig = RestRateLimitConfig()
-    rest_query: RestQueryConfig = RestQueryConfig()
+    runnable: RunnableConfig = RunnableConfig()
+    uefa_rag: UefaRagConfig = UefaRagConfig()
+    chroma: ChromaConfig = ChromaConfig()
+    qdrant: QdrantConfig = QdrantConfig()
 
     model_config = SettingsConfigDict(
         env_file=find_dotenv(),
