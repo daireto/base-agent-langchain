@@ -387,22 +387,22 @@ class AgentService:
                 the Langfuse metadata. If not provided, the user ID will be None.
         """
         max_concurrency = (
-            min(config_request.max_concurrency, settings.max_concurrency)
+            min(config_request.max_concurrency, settings.runnable.max_concurrency)
             if config_request.max_concurrency
-            else settings.max_concurrency
+            else settings.runnable.max_concurrency
         )
 
         recursion_limit = (
-            min(config_request.recursion_limit, settings.max_recursion_limit)
+            min(config_request.recursion_limit, settings.runnable.max_recursion_limit)
             if config_request.recursion_limit
-            else settings.max_recursion_limit
+            else settings.runnable.max_recursion_limit
         )
 
         thread_id = str(config_request.thread_id)
 
         callbacks = []
         metadata = {}
-        if settings.use_langfuse:
+        if settings.langfuse_enabled:
             callbacks.append(langfuse_handler)
             metadata = {
                 'langfuse_user_id': context.user_id if context else None,
