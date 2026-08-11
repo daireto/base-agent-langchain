@@ -14,6 +14,7 @@ def get_uefa_agent() -> CompiledStateGraph:
         model,
         tools=[uefa_docs_retriever],
         system_prompt=prompt_manager.get('uefa_agent_prompt'),
+        name='uefa_agent',
     )
 
 

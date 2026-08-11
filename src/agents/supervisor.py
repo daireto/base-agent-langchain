@@ -156,6 +156,7 @@ async def build_supervisor(
         ],
         checkpointer=checkpointer,
         context_schema=Context,
+        name='supervisor',
     )
 
     yield supervisor

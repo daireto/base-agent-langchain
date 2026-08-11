@@ -42,6 +42,7 @@ def get_soc_agent() -> CompiledStateGraph:
                 description_prefix='Modificación de la lista negra de IPs pendiente de revisión.',
             ),
         ],
+        name='soc_agent',
     )
 
 
