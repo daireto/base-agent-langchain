@@ -9,7 +9,6 @@ from sqlactive import DBConnection
 
 from agents.supervisor import Supervisor, build_supervisor
 from core.config import settings
-from core.definitions import CHECKPOINTER_PATH
 from core.memory.extractor.base_memory_extractor import BaseMemoryExtractor
 from core.memory.extractor.llm_memory_extractor import LLMMemoryExtractor
 from core.memory.store.base_memory_store import BaseMemoryStore
@@ -69,7 +68,7 @@ async def setup() -> AsyncGenerator[AppResources]:
         db = await stack.enter_async_context(init_database())
 
         checkpointer_conn = await stack.enter_async_context(
-            aiosqlite.connect(CHECKPOINTER_PATH)
+            aiosqlite.connect(settings.supervisor.checkpointer_url.get_secret_value())
         )
 
         checkpointer = AsyncSqliteSaver(checkpointer_conn)
