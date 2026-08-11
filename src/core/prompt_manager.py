@@ -7,7 +7,7 @@ from langfuse import get_client
 from core.config import settings
 from core.definitions import PROMPT_TEMPLATE_DIR
 
-langfuse = get_client() if settings.use_langfuse else None
+langfuse = get_client() if settings.langfuse_enabled else None
 
 
 class PromptManager:
