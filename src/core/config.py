@@ -42,6 +42,10 @@ class RestServerConfig(BaseModel):
     ssl_keyfile: str | None = None
     allowed_hosts: str = '*'
     behind_proxy: bool = False
+    a2a_enabled: bool = False
+    a2a_card_name: str = 'Base Agent'
+    a2a_card_description: str = 'A general-purpose agent for various tasks.'
+    a2a_card_version: str = '1.0.0'
 
     @property
     def is_dev(self) -> bool:
@@ -129,7 +133,7 @@ class QdrantConfig(BaseModel):
 
 
 class Settings(BaseSettings):
-    presentation_mode: Literal['a2a', 'rest', 'ui'] = 'ui'
+    presentation_mode: Literal['api', 'ui'] = 'api'
 
     langfuse_enabled: bool = False
 
