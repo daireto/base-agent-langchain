@@ -20,7 +20,7 @@ class BaseConversationRepository(ABC):
     async def create_conversation(
         self,
         user_id: str,
-        thread_id: UUID,
+        thread_id: str,
         title: str | None = None,
         description: str | None = None,
     ) -> Conversation:
@@ -90,7 +90,7 @@ class BaseConversationRepository(ABC):
 
     @abstractmethod
     async def get_conversation_by_thread_id(
-        self, thread_id: UUID
+        self, thread_id: str
     ) -> Conversation | None:
         """Get a conversation by its thread ID.
 

@@ -25,7 +25,7 @@ class ConversationRepository(BaseConversationRepository):
     async def create_conversation(
         self,
         user_id: str,
-        thread_id: UUID,
+        thread_id: str,
         title: str | None = None,
         description: str | None = None,
     ) -> Conversation:
@@ -86,7 +86,7 @@ class ConversationRepository(BaseConversationRepository):
         return await Conversation.get(conversation_id)
 
     async def get_conversation_by_thread_id(
-        self, thread_id: UUID
+        self, thread_id: str
     ) -> Conversation | None:
         return await Conversation.where(Conversation.thread_id == thread_id).one()
 
