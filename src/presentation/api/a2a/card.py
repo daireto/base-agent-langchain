@@ -30,12 +30,12 @@ def create_agent_card(
         supported_interfaces=[
             AgentInterface(
                 protocol_binding='JSONRPC',
-                url='http://localhost:8000/jsonrpc',
+                url='http://127.0.0.1:8000/jsonrpc',
                 protocol_version='1.0.0',
             ),
             AgentInterface(
                 protocol_binding='HTTP+JSON',
-                url='http://localhost:8000/api',
+                url='http://127.0.0.1:8000/api',
                 protocol_version='1.0.0',
             ),
         ],
