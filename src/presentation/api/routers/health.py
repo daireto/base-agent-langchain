@@ -1,0 +1,20 @@
+from fastapi import APIRouter
+
+from presentation.api.dtos.health import ServerHealthResponse
+from presentation.api.health import server_health
+
+router = APIRouter(
+    prefix='/health',
+    tags=['health'],
+)
+
+
+@router.get('/')
+def read_health() -> ServerHealthResponse:
+    """Check the health status of the server."""
+    return ServerHealthResponse(
+        message='ok'
+        if server_health.is_healthy
+        else server_health.get_unhealthy_reason(),
+        healthy=server_health.is_healthy,
+    )
