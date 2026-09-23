@@ -7,7 +7,6 @@ from langchain_core.messages.ai import add_ai_message_chunks
 from langchain_core.runnables import RunnableConfig
 from langfuse.langchain import CallbackHandler
 from langgraph.types import Command, Interrupt, StateSnapshot, StreamPart
-from uuid_utils.compat import UUID
 
 from agents.context import Context
 from agents.supervisor import Supervisor
@@ -32,11 +31,12 @@ from dtos.agent import (
 from dtos.common import SSEEvent
 from persistence.parsers.message_parsers import LCMessage
 from persistence.repos.base_conversation_repository import BaseConversationRepository
+from utils.singleton import SingletonMeta
 
 langfuse_handler = CallbackHandler()
 
 
-class AgentService:
+class AgentService(metaclass=SingletonMeta):
     """Service class for handling agent requests and responses.
 
     Attributes:
@@ -156,7 +156,7 @@ class AgentService:
                 ):
                     yield event
 
-            if flush := self._stream_transformer.flush_buffer(str(thread_id)):
+            if flush := self._stream_transformer.flush_buffer(thread_id):
                 yield SSEEvent(
                     event='chunk',
                     data=AgentResponse(
@@ -196,19 +196,19 @@ class AgentService:
             if request.thread_id:
                 self._stream_transformer.drop_buffer(str(request.thread_id))
 
-    async def get_state(self, thread_id: UUID) -> StateSnapshot:
+    async def get_state(self, thread_id: str) -> StateSnapshot:
         """Return the current state of the thread."""
         return await self._graph.aget_state(
             config=RunnableConfig(
                 configurable={
-                    'thread_id': str(thread_id),
+                    'thread_id': thread_id,
                 },
             )
         )
 
-    async def clean_state(self, thread_id: UUID) -> None:
+    async def clean_state(self, thread_id: str) -> None:
         """Clean the state of the thread."""
-        await self._graph.checkpointer.adelete_thread(thread_id=str(thread_id))  # type: ignore
+        await self._graph.checkpointer.adelete_thread(thread_id=thread_id)  # type: ignore
 
     def parse_state_to_response(self, state: StateSnapshot) -> AgentStateResponse:
         """Parse the state snapshot into a response object.
@@ -271,7 +271,7 @@ class AgentService:
         self,
         chunk: StreamPart[Any, Any],
         ai_msg_chunks_buffer: list[AIMessageChunk],
-        thread_id: UUID,
+        thread_id: str,
     ) -> SSEEvent[AgentResponse] | None:
         """Parse a stream part from the agent into an SSEEvent object.
 
@@ -307,7 +307,7 @@ class AgentService:
                 ),
             )
 
-        if msg := self._stream_transformer.transform_stream_chunk(msg, str(thread_id)):
+        if msg := self._stream_transformer.transform_stream_chunk(msg, thread_id):
             return SSEEvent(
                 event='chunk',
                 data=AgentResponse(
@@ -321,7 +321,7 @@ class AgentService:
     async def _create_or_update_conversation(
         self,
         user_id: str,
-        thread_id: UUID,
+        thread_id: str,
         messages: list[BaseMessage],
         interrupts: list[AgentToolInterrupt],
     ) -> None:
