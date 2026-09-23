@@ -1,3 +1,5 @@
+import contextlib
+
 from langchain_openai import OpenAIEmbeddings
 from langchain_qdrant import FastEmbedSparse, QdrantVectorStore, RetrievalMode
 from qdrant_client import QdrantClient, models
@@ -37,7 +39,8 @@ class UEFAAgentStore:
 
     def close(self) -> None:
         """Close the Qdrant client connection."""
-        self._qdrant_client.close()
+        with contextlib.suppress(Exception):
+            self._qdrant_client.close()
 
     def _get_client(self) -> QdrantClient:
         """Get the Qdrant client based on the configuration settings."""
