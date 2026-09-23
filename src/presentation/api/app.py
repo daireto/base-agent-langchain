@@ -9,9 +9,15 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
 from agents.uefa_agent.store import uefa_store
 from core.config import settings
-from presentation.api.a2a.routes import register_a2a_routes
+from core.logger import get_logger
+
+try:
+    from presentation.api.a2a.routes import register_a2a_routes
+except ImportError:
+    register_a2a_routes = None
+
 from presentation.api.exception_handlers import exception_handlers
-from presentation.api.logger import get_logger, setup_app_logger
+from presentation.api.logger_setup import setup_app_logger
 from presentation.api.middlewares.access_log_middleware import AccessLogMiddleware
 from presentation.api.middlewares.rate_limit_middleware import RateLimitMiddleware
 from presentation.api.middlewares.security_headers_middleware import (
@@ -40,7 +46,7 @@ def register_routers(app: FastAPI) -> None:
     app.include_router(memories_router)
     app.include_router(messages_router)
 
-    if settings.rest_server.a2a_enabled:
+    if settings.rest_server.a2a_enabled and register_a2a_routes:
         register_a2a_routes(app)
 
 
