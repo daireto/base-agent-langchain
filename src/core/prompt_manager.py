@@ -2,12 +2,9 @@ from pathlib import Path
 from typing import Any
 
 from langchain_core.prompts import PromptTemplate
-from langfuse import get_client
 
-from core.config import settings
 from core.definitions import PROMPT_TEMPLATE_DIR
-
-langfuse = get_client() if settings.langfuse_enabled else None
+from core.langfuse_resources import langfuse
 
 
 class PromptManager:
@@ -19,7 +16,7 @@ class PromptManager:
     """
 
     def __init__(self) -> None:
-        self._langfuse_enabled = langfuse and langfuse.auth_check()
+        self._langfuse_enabled = langfuse is not None
         self._templates_dir = Path(__file__).parent.parent / PROMPT_TEMPLATE_DIR
         self._templates_dir.mkdir(parents=True, exist_ok=True)
 
