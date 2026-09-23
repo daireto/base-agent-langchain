@@ -36,6 +36,9 @@ rest = [
     "limits==5.8.0",
     "python-json-logger==4.1.0",
 ]
+a2a = [
+    "a2a-sdk==1.1.2",
+]
 
 [dependency-groups]
 dev = [
