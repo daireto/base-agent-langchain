@@ -119,7 +119,7 @@ class ConversationService:
         return ConversationResponse.model_validate(conversation)
 
     async def get_conversation_by_thread_id(
-        self, thread_id: UUID
+        self, thread_id: str
     ) -> ConversationResponse:
         """Return a conversation by its thread identifier.
 
