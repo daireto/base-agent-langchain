@@ -36,7 +36,7 @@ class MemoriesConfig(BaseModel):
 class RestServerConfig(BaseModel):
     env: Literal['dev', 'prod'] = 'dev'
     port: int = 8000
-    host: str = 'localhost'
+    host: str = '127.0.0.1'
     debug: bool = False
     ssl_certfile: str | None = None
     ssl_keyfile: str | None = None
@@ -118,7 +118,7 @@ class UefaRagConfig(BaseModel):
 class ChromaConfig(BaseModel):
     mode: Literal['local', 'server'] = 'local'
     local_db_path: str = '.chroma_db'
-    host: str = 'localhost'
+    host: str = '127.0.0.1'
     port: int = 8001
     ssl: bool = False
     api_token: SecretStr = SecretStr('my-secret-token')
@@ -127,7 +127,7 @@ class ChromaConfig(BaseModel):
 class QdrantConfig(BaseModel):
     mode: Literal['local', 'server'] = 'local'
     local_db_path: str = '.qdrant_db'
-    url: str = 'http://localhost:6333'
+    url: str = 'http://127.0.0.1:6333'
     timeout: int = 30
     api_key: SecretStr = SecretStr('my-secret-token')
 
