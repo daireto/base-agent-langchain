@@ -5,7 +5,6 @@ from langchain.agents import AgentState
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage, HumanMessage
 from langchain_core.messages.ai import add_ai_message_chunks
 from langchain_core.runnables import RunnableConfig
-from langfuse.langchain import CallbackHandler
 from langgraph.types import Command, Interrupt, StateSnapshot, StreamPart
 
 from agents.context import Context
@@ -17,6 +16,7 @@ from core.errors import (
     MissingInterruptCommandError,
     RequiredEditedArgsError,
 )
+from core.langfuse_resources import langfuse_handler
 from core.pii.stream_transformers.base_stream_transformer import (
     BasePIIStreamTransformer,
 )
@@ -32,8 +32,6 @@ from dtos.common import SSEEvent
 from persistence.parsers.message_parsers import LCMessage
 from persistence.repos.base_conversation_repository import BaseConversationRepository
 from utils.singleton import SingletonMeta
-
-langfuse_handler = CallbackHandler()
 
 
 class AgentService(metaclass=SingletonMeta):
