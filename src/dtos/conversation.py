@@ -15,7 +15,7 @@ class CreateConversationRequest(RequestDTO):
     user_id: str = Field(
         ..., description='The ID of the user creating the conversation'
     )
-    thread_id: UUID = Field(
+    thread_id: str = Field(
         ..., description='The ID of the thread to which the conversation belongs'
     )
     title: str | None = Field(default=None, description='The title of the conversation')
@@ -44,7 +44,7 @@ class ConversationResponse(EntityResponseDTO):
     user_id: str = Field(
         ..., description='The ID of the user who owns the conversation'
     )
-    thread_id: UUID = Field(
+    thread_id: str = Field(
         ..., description='The ID of the thread to which the conversation belongs'
     )
     title: str | None = Field(default=None, description='The title of the conversation')
