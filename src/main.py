@@ -1,6 +1,6 @@
 from agents.uefa_agent.store import uefa_store
 from core.config import settings
-from presentation.rest.app import create_default_app
+from presentation.api.app import create_default_app
 
 if settings.presentation_mode == 'rest':
     app = create_default_app()
@@ -21,7 +21,7 @@ if __name__ == '__main__':
         finally:
             uefa_store.close()
 
-    elif settings.presentation_mode == 'rest':
+    elif settings.presentation_mode == 'api':
         import uvicorn
 
         uvicorn.run(
