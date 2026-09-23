@@ -1,8 +1,8 @@
-GET http://localhost:8000/health/
+GET http://127.0.0.1:8000/health/
 
 ###
 
-POST http://localhost:8000/agent/invoke/
+POST http://127.0.0.1:8000/agent/invoke/
 Content-Type: application/json
 
 {
@@ -13,9 +13,9 @@ Content-Type: application/json
 
 ###
 # @prompt thread_id
-GET http://localhost:8000/agent/state/{{thread_id}}
+GET http://127.0.0.1:8000/agent/state/{{thread_id}}
 Content-Type: application/json
 
 ###
 
-GET http://localhost:8000/memories/
+GET http://127.0.0.1:8000/memories/
