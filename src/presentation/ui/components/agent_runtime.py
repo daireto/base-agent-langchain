@@ -2,7 +2,6 @@ from collections.abc import Generator
 from typing import Any
 
 from langgraph.types import StateSnapshot
-from uuid_utils.compat import UUID
 
 from dtos.common import SSEEvent
 from presentation.ui.components.runtime import Runtime
@@ -30,7 +29,7 @@ class AgentRuntime(Runtime[AppResources]):
     def get_state(self, config: AgentConfig) -> StateSnapshot:
         return self.submit(self.service.get_state(config.thread_id))
 
-    def clean_state(self, thread_id: UUID) -> None:
+    def clean_state(self, thread_id: str) -> None:
         return self.submit(self.service.clean_state(thread_id))
 
     def parse_state_to_response(self, state: StateSnapshot) -> AgentStateResponse:
