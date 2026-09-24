@@ -33,6 +33,10 @@ class MemoriesConfig(BaseModel):
     collection_name: str = 'memories'
 
 
+class UIConfig(BaseModel):
+    port: int = 8051
+
+
 class RestServerConfig(BaseModel):
     env: Literal['dev', 'prod'] = 'dev'
     port: int = 8000
@@ -147,6 +151,7 @@ class Settings(BaseSettings):
     memory_extractor: ChatModelSettings = ChatModelSettings()
     database: DatabaseConfig = DatabaseConfig()
     memories: MemoriesConfig = MemoriesConfig()
+    ui: UIConfig = UIConfig()
     rest_server: RestServerConfig = RestServerConfig()
     rest_cors: RestCORSConfig = RestCORSConfig()
     rest_log: RestLogConfig = RestLogConfig()
