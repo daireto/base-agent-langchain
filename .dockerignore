@@ -1,0 +1,13 @@
+.env
+.git
+.venv
+__pycache__
+*.pyc
+*.pyo
+.pytest_cache
+.ruff_cache
+.chroma_db
+.qdrant_db
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
