@@ -1,3 +1,5 @@
+import sys
+
 from agents.uefa_agent.store import uefa_store
 from core.config import settings
 from core.logger import get_logger
@@ -8,24 +10,35 @@ _logger = get_logger('main')
 if settings.presentation_mode == 'api':
     app = create_default_app()
 
-if __name__ == '__main__':
-    if settings.presentation_mode == 'ui':
-        import sys
 
+def main() -> int:
+    """Main entry point for the application.
+
+    Returns:
+        int: Exit code (0 for success, non-zero for failure).
+    """
+    if settings.presentation_mode == 'ui':
         try:
-            from streamlit.web import cli as st_cli
+            from streamlit.web import cli as st_cli  # noqa: PLC0415
         except ImportError:
             _logger.exception('Streamlit no está instalado.')
-            sys.exit(1)
+            uefa_store.close()
+            return 1
 
         try:
-            sys.argv = ['streamlit', 'run', 'src/presentation/ui/app.py']
-            sys.exit(st_cli.main())
+            sys.argv = [
+                'streamlit',
+                'run',
+                'src/presentation/ui/app.py',
+                '--server.port',
+                str(settings.ui.port),
+            ]
+            return st_cli.main()
         finally:
             uefa_store.close()
 
     elif settings.presentation_mode == 'api':
-        import uvicorn
+        import uvicorn  # noqa: PLC0415
 
         reload_ = settings.rest_server.is_dev
         if settings.qdrant.mode == 'local':
@@ -42,3 +55,9 @@ if __name__ == '__main__':
             reload=reload_,
             forwarded_allow_ips='*' if settings.rest_server.behind_proxy else None,
         )
+
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())
