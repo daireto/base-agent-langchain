@@ -12,11 +12,12 @@ from dtos.base import EntityResponseDTO, RequestDTO
 class CreateConversationRequest(RequestDTO):
     """Request DTO for creating a new conversation."""
 
+    pk: UUID = Field(
+        ...,
+        description='The primary key (ID of the thread to which the conversation belongs)',
+    )
     user_id: str = Field(
         ..., description='The ID of the user creating the conversation'
-    )
-    thread_id: str = Field(
-        ..., description='The ID of the thread to which the conversation belongs'
     )
     title: str | None = Field(default=None, description='The title of the conversation')
     description: str | None = Field(
@@ -43,9 +44,6 @@ class ConversationResponse(EntityResponseDTO):
 
     user_id: str = Field(
         ..., description='The ID of the user who owns the conversation'
-    )
-    thread_id: str = Field(
-        ..., description='The ID of the thread to which the conversation belongs'
     )
     title: str | None = Field(default=None, description='The title of the conversation')
     description: str | None = Field(
