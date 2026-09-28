@@ -9,7 +9,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 RUN apt-get update \
-	&& apt-get install --no-install-recommends -y libgomp1 \
+	&& apt-get install --no-install-recommends -y \
+    libgomp1 \
+    libpq-dev \
 	&& rm -rf /var/lib/apt/lists/* \
 	&& python -m pip install --no-cache-dir uv
 
@@ -20,5 +22,6 @@ COPY src ./src
 COPY data ./data
 
 ENV PRESENTATION_MODE=api
+ENV LANGGRAPH_STRICT_MSGPACK=true
 
 CMD ["uv", "run", "--no-dev", "src/main.py"]

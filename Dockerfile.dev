@@ -9,7 +9,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 RUN apt-get update \
-	&& apt-get install --no-install-recommends -y libgomp1 \
+	&& apt-get install --no-install-recommends -y \
+    libgomp1 \
+    libpq-dev \
 	&& rm -rf /var/lib/apt/lists/* \
 	&& python -m pip install --no-cache-dir uv
 
@@ -18,5 +20,7 @@ RUN uv sync
 
 COPY src ./src
 COPY data ./data
+
+ENV LANGGRAPH_STRICT_MSGPACK=true
 
 CMD ["uv", "run", "src/main.py"]
