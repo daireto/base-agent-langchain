@@ -1,5 +1,6 @@
 from langchain.agents import create_agent
-from langchain.agents.middleware import HumanInTheLoopMiddleware
+from langchain.agents.middleware import HumanInTheLoopMiddleware, dynamic_prompt
+from langchain.agents.middleware.types import ContextT, ModelRequest
 from langgraph.graph.state import CompiledStateGraph
 
 from agents.soc_agent.tools import (
@@ -11,7 +12,12 @@ from agents.soc_agent.tools import (
     virustotal_analyzer,
 )
 from core.config import settings
-from core.prompt_manager import prompt_manager
+from core.prompt.manager import prompt_manager
+
+
+@dynamic_prompt
+def soc_agent_prompt(_: ModelRequest[ContextT]) -> str:
+    return prompt_manager.get('soc_agent_prompt')
 
 
 def get_soc_agent() -> CompiledStateGraph:
@@ -28,8 +34,8 @@ def get_soc_agent() -> CompiledStateGraph:
             remove_ip_from_blacklist,
             virustotal_analyzer,
         ],
-        system_prompt=prompt_manager.get('soc_agent_prompt'),
         middleware=[
+            soc_agent_prompt,
             HumanInTheLoopMiddleware(
                 interrupt_on={
                     'add_ip_to_blacklist': {

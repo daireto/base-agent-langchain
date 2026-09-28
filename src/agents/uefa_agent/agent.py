@@ -1,9 +1,16 @@
 from langchain.agents import create_agent
+from langchain.agents.middleware import dynamic_prompt
+from langchain.agents.middleware.types import ContextT, ModelRequest
 from langgraph.graph.state import CompiledStateGraph
 
 from agents.uefa_agent.tools import uefa_docs_retriever
 from core.config import settings
-from core.prompt_manager import prompt_manager
+from core.prompt.manager import prompt_manager
+
+
+@dynamic_prompt
+def uefa_agent_prompt(_: ModelRequest[ContextT]) -> str:
+    return prompt_manager.get('uefa_agent_prompt')
 
 
 def get_uefa_agent() -> CompiledStateGraph:
@@ -13,7 +20,7 @@ def get_uefa_agent() -> CompiledStateGraph:
     return create_agent(
         model,
         tools=[uefa_docs_retriever],
-        system_prompt=prompt_manager.get('uefa_agent_prompt'),
+        middleware=[uefa_agent_prompt],
         name='uefa_agent',
     )
 
