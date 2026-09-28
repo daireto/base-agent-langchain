@@ -5,19 +5,30 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    restart: always
     env_file:
       - .env
     environment:
-      PRESENTATION_MODE: ${PRESENTATION_MODE:-api}
-      REST_SERVER__ENV: ${REST_SERVER__ENV:-prod}
-      REST_SERVER__PORT: ${REST_SERVER__PORT:-8000}
-      UI__PORT: ${UI__PORT:-8051}
-      QDRANT__MODE: ${QDRANT__MODE:-server}
+      LANGFUSE_BASE_URL: ${LANGFUSE_BASE_URL:-http://langfuse-web:3000}
+      DATABASE__URL: ${DATABASE__URL:-postgresql+psycopg://postgres:postgres@postgres:5432/postgres} # CHANGEME
+      REST_SERVER__ENV: dev
+      REST_RATE_LIMIT__STORAGE_URL: ${REST_RATE_LIMIT__STORAGE_URL:-async+redis://:myredissecret@redis:6379/0} # CHANGEME
+      SUPERVISOR__ENGINE: postgres
+      SUPERVISOR__CHECKPOINTER_URL: ${SUPERVISOR__CHECKPOINTER_URL:-postgres://postgres:postgres@postgres:5432/postgres} # CHANGEME
+      CHROMA__MODE: server
+      CHROMA__HOST: ${CHROMA__HOST:-chroma}
+      CHROMA__PORT: ${CHROMA__PORT:-8000}
+      CHROMA__API_TOKEN: ${CHROMA_API_KEY:-chromasecret} # CHANGEME
+      QDRANT__MODE: server
       QDRANT__URL: ${QDRANT__URL:-http://qdrant:6333}
       QDRANT__TIMEOUT: ${QDRANT__TIMEOUT:-30}
-      QDRANT__API_KEY: ${QDRANT_API_KEY:-qdrantsecret}
+      QDRANT__API_KEY: ${QDRANT_API_KEY:-qdrantsecret} # CHANGEME
     depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      chroma:
+        condition: service_healthy
       qdrant:
         condition: service_healthy
     ports:
@@ -42,11 +53,11 @@ services:
     ports:
       - 127.0.0.1:3030:3030
     environment: &langfuse-worker-env
-      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://127.0.0.1:3000}
-      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/postgres} # CHANGEME
-      SALT: ${SALT:-mysalt} # CHANGEME
-      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-0000000000000000000000000000000000000000000000000000000000000000} # CHANGEME: generate via `openssl rand -hex 32`
-      TELEMETRY_ENABLED: ${TELEMETRY_ENABLED:-true}
+      NEXTAUTH_URL: ${LANGFUSE_NEXTAUTH_URL:-http://127.0.0.1:3000}
+      DATABASE_URL: ${LANGFUSE_DATABASE_URL:-postgresql://langfuse:langfusepassword@postgres:5432/langfuse} # CHANGEME
+      SALT: ${LANGFUSE_SALT:-mysalt} # CHANGEME
+      ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY:-0000000000000000000000000000000000000000000000000000000000000000} # CHANGEME: generate via `openssl rand -hex 32`
+      TELEMETRY_ENABLED: ${LANGFUSE_TELEMETRY_ENABLED:-false}
       LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES: ${LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES:-false}
       CLICKHOUSE_MIGRATION_URL: ${CLICKHOUSE_MIGRATION_URL:-clickhouse://clickhouse:9000}
       CLICKHOUSE_URL: ${CLICKHOUSE_URL:-http://clickhouse:8123}
@@ -81,17 +92,11 @@ services:
       LANGFUSE_S3_BATCH_EXPORT_FORCE_PATH_STYLE: ${LANGFUSE_S3_BATCH_EXPORT_FORCE_PATH_STYLE:-true}
       LANGFUSE_INGESTION_QUEUE_DELAY_MS: ${LANGFUSE_INGESTION_QUEUE_DELAY_MS:-}
       LANGFUSE_INGESTION_CLICKHOUSE_WRITE_INTERVAL_MS: ${LANGFUSE_INGESTION_CLICKHOUSE_WRITE_INTERVAL_MS:-}
-      REDIS_HOST: ${REDIS_HOST:-redis}
-      REDIS_PORT: ${REDIS_PORT:-6379}
-      REDIS_AUTH: ${REDIS_AUTH:-myredissecret} # CHANGEME
+      REDIS_CONNECTION_STRING: ${LANGFUSE_REDIS_CONNECTION_STRING:-redis://:myredissecret@redis:6379/1} # CHANGEME
       LANGFUSE_BULLMQ_SKIP_REDIS_VERSION_CHECK: ${LANGFUSE_BULLMQ_SKIP_REDIS_VERSION_CHECK:-false}
-      REDIS_TLS_ENABLED: ${REDIS_TLS_ENABLED:-false}
-      REDIS_TLS_CA: ${REDIS_TLS_CA:-/certs/ca.crt}
-      REDIS_TLS_CERT: ${REDIS_TLS_CERT:-/certs/redis.crt}
-      REDIS_TLS_KEY: ${REDIS_TLS_KEY:-/certs/redis.key}
-      EMAIL_FROM_ADDRESS: ${EMAIL_FROM_ADDRESS:-}
-      SMTP_CONNECTION_URL: ${SMTP_CONNECTION_URL:-}
-      NODE_OPTIONS: "${NODE_OPTIONS:---max-old-space-size=2048}"
+      EMAIL_FROM_ADDRESS: ${LANGFUSE_EMAIL_FROM_ADDRESS:-}
+      SMTP_CONNECTION_URL: ${LANGFUSE_SMTP_CONNECTION_URL:-}
+      NODE_OPTIONS: "${LANGFUSE_NODE_OPTIONS:---max-old-space-size=2048}"
 
   langfuse-web:
     image: docker.io/langfuse/langfuse:3
@@ -101,17 +106,18 @@ services:
       - 127.0.0.1:3000:3000
     environment:
       <<: *langfuse-worker-env
-      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-mysecret} # CHANGEME
-      LANGFUSE_INIT_ORG_ID: ${LANGFUSE_INIT_ORG_ID:-}
-      LANGFUSE_INIT_ORG_NAME: ${LANGFUSE_INIT_ORG_NAME:-}
-      LANGFUSE_INIT_PROJECT_ID: ${LANGFUSE_INIT_PROJECT_ID:-}
-      LANGFUSE_INIT_PROJECT_NAME: ${LANGFUSE_INIT_PROJECT_NAME:-}
+      NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET:-mysecret} # CHANGEME
+      LANGFUSE_INIT_ORG_ID: ${LANGFUSE_INIT_ORG_ID:-my-org}
+      LANGFUSE_INIT_ORG_NAME: ${LANGFUSE_INIT_ORG_NAME:-My Org}
+      LANGFUSE_INIT_PROJECT_ID: ${LANGFUSE_INIT_PROJECT_ID:-my-project}
+      LANGFUSE_INIT_PROJECT_NAME: ${LANGFUSE_INIT_PROJECT_NAME:-My Project}
       LANGFUSE_INIT_PROJECT_PUBLIC_KEY: ${LANGFUSE_INIT_PROJECT_PUBLIC_KEY:-}
       LANGFUSE_INIT_PROJECT_SECRET_KEY: ${LANGFUSE_INIT_PROJECT_SECRET_KEY:-}
-      LANGFUSE_INIT_USER_EMAIL: ${LANGFUSE_INIT_USER_EMAIL:-}
-      LANGFUSE_INIT_USER_NAME: ${LANGFUSE_INIT_USER_NAME:-}
-      LANGFUSE_INIT_USER_PASSWORD: ${LANGFUSE_INIT_USER_PASSWORD:-}
-      NODE_OPTIONS: "${NODE_OPTIONS:---max-old-space-size=2048}"
+      LANGFUSE_INIT_USER_EMAIL: ${LANGFUSE_INIT_USER_EMAIL:-langfuse@yopmail.com}
+      LANGFUSE_INIT_USER_NAME: ${LANGFUSE_INIT_USER_NAME:-langfuse}
+      LANGFUSE_INIT_USER_PASSWORD: ${LANGFUSE_INIT_USER_PASSWORD:-langfusesecret} # CHANGEME
+      AUTH_DISABLE_SIGNUP: ${LANGFUSE_AUTH_DISABLE_SIGNUP:-true}
+      NODE_OPTIONS: "${LANGFUSE_NODE_OPTIONS:---max-old-space-size=2048}"
 
   clickhouse:
     image: docker.io/clickhouse/clickhouse-server
@@ -122,8 +128,8 @@ services:
       CLICKHOUSE_USER: ${CLICKHOUSE_USER:-clickhouse}
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-clickhouse} # CHANGEME
     volumes:
-      - langfuse_clickhouse_data:/var/lib/clickhouse
-      - langfuse_clickhouse_logs:/var/log/clickhouse-server
+      - clickhouse_data:/var/lib/clickhouse
+      - clickhouse_logs:/var/log/clickhouse-server
     ports:
       - 127.0.0.1:8123:8123
       - 127.0.0.1:9000:9000
@@ -147,7 +153,7 @@ services:
       - 127.0.0.1:9090:9000
       - 127.0.0.1:9091:9001
     volumes:
-      - langfuse_minio_data:/data
+      - minio_data:/data
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]
       interval: 1s
@@ -165,12 +171,13 @@ services:
     ports:
       - 127.0.0.1:6379:6379
     volumes:
-      - langfuse_redis_data:/data
+      - redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 3s
       timeout: 10s
       retries: 10
+      start_period: 1s
 
   postgres:
     image: docker.io/postgres:${POSTGRES_VERSION:-17}
@@ -179,20 +186,25 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres} # CHANGEME
       POSTGRES_DB: ${POSTGRES_DB:-postgres}
+      LANGFUSE_DB_USER: ${LANGFUSE_DB_USER:-langfuse}
+      LANGFUSE_DB_PASSWORD: ${LANGFUSE_DB_PASSWORD:-langfusepassword} # CHANGEME
+      LANGFUSE_DB_NAME: ${LANGFUSE_DB_NAME:-langfuse}
       TZ: UTC
       PGTZ: UTC
     ports:
       - 127.0.0.1:5432:5432
     volumes:
-      - langfuse_postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 3s
       timeout: 3s
       retries: 10
+      start_period: 1s
 
   qdrant:
-    image: docker.io/qdrant/qdrant:latest
+    build: ./docker/qdrant/build
     restart: always
     environment:
       QDRANT__SERVICE__API_KEY: ${QDRANT_API_KEY:-qdrantsecret} # CHANGEME
@@ -203,23 +215,44 @@ services:
     volumes:
       - qdrant_data:/qdrant/storage
     healthcheck:
-      test: >-
-        bash -c 'exec 3<>/dev/tcp/127.0.0.1/6333 && printf "GET /healthz HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n" >&3 && IFS= read -r status <&3 && [[ "$$status" == *" 200 "* ]]'
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:6333/healthz"]
       interval: 5s
       timeout: 5s
       retries: 10
-      start_period: 5s
+      start_period: 1s
+
+  chroma:
+    build: ./docker/chroma/build
+    restart: always
+    environment:
+      IS_PERSISTENT: ${CHROMA_IS_PERSISTENT:-TRUE}
+      ANONYMIZED_TELEMETRY: ${CHROMA_ANONYMIZED_TELEMETRY:-FALSE}
+      CHROMA_SERVER_AUTHN_PROVIDER: ${CHROMA_SERVER_AUTHN_PROVIDER:-chromadb.auth.token_authn.TokenAuthenticationServerProvider}
+      CHROMA_SERVER_AUTHN_CREDENTIALS: ${CHROMA_API_KEY:-chromasecret} # CHANGEME
+      CHROMA_AUTH_TOKEN_TRANSPORT_HEADER: ${CHROMA_AUTH_TOKEN_TRANSPORT_HEADER:-Authorization}
+    ports:
+      - 127.0.0.1:8001:8000
+    volumes:
+      - chroma_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/api/v2/heartbeat"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 1s
 
 volumes:
-  langfuse_postgres_data:
+  postgres_data:
     driver: local
-  langfuse_clickhouse_data:
+  clickhouse_data:
     driver: local
-  langfuse_clickhouse_logs:
+  clickhouse_logs:
     driver: local
-  langfuse_minio_data:
+  minio_data:
     driver: local
-  langfuse_redis_data:
+  redis_data:
     driver: local
   qdrant_data:
+    driver: local
+  chroma_data:
     driver: local
