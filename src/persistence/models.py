@@ -12,11 +12,10 @@ from sqlactive import ActiveRecordBaseModel
 from sqlalchemy import JSON, DateTime, ForeignKey, Index, String, Text, desc
 from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from uuid_utils.compat import UUID
+from uuid_utils.compat import UUID, uuid7
 
 from core.enums import ConversationStatus, InterruptDecision, MessageRole, ToolStatus
 from persistence.types import GUID
-from utils.uuid import uuid7
 
 
 class BaseModel(ActiveRecordBaseModel):
@@ -41,8 +40,6 @@ class Conversation(BaseModel):
     )
 
     user_id: Mapped[str] = mapped_column(String(255), index=True)
-
-    thread_id: Mapped[UUID] = mapped_column(unique=True, index=True)
 
     title: Mapped[str | None] = mapped_column(String(60))
 
@@ -85,6 +82,8 @@ class Message(BaseModel):
         SqlEnum(MessageRole),
         index=True,
     )
+
+    provided_id: Mapped[str | None] = mapped_column(String(255), index=True)
 
     content: Mapped[str] = mapped_column(Text)
 
