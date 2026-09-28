@@ -1,9 +1,9 @@
 from time import monotonic
 from typing import Any
 
-from langchain_core.prompts import PromptTemplate
 from langfuse import Langfuse
 from langfuse.api import NotFoundError
+from langfuse.model import TemplateParser
 
 from core.config import settings
 from core.definitions import BASE_DIR, PROMPT_TEMPLATE_DIR
@@ -27,7 +27,7 @@ class PromptManager:
         self._langfuse_enabled = langfuse is not None
         self._templates_dir = BASE_DIR / PROMPT_TEMPLATE_DIR
         self._templates_dir.mkdir(parents=True, exist_ok=True)
-        self._local_prompt_cache: dict[str, tuple[float, PromptTemplate]] = {}
+        self._local_prompt_cache: dict[str, tuple[float, str]] = {}
 
     @property
     def langfuse(self) -> Langfuse:
@@ -35,6 +35,41 @@ class PromptManager:
         if not langfuse:
             raise RuntimeError('Langfuse is not initialized.')
         return langfuse
+
+    def initialize_langfuse_prompts(self) -> None:
+        """Initialize prompt templates in Langfuse from local files.
+
+        This method reads all prompt templates from the local templates directory
+        and creates them in Langfuse if they do not already exist.
+        """
+        if not self._langfuse_enabled:
+            _logger.info('Langfuse is not enabled. Skipping prompt initialization.')
+            return
+
+        for prompt_file in self._templates_dir.glob('*.md'):
+            prompt_name = prompt_file.stem
+            try:
+                self.langfuse.get_prompt(
+                    name=prompt_name,
+                    label='production',
+                    cache_ttl_seconds=settings.prompt.cache_ttl_seconds,
+                )
+                _logger.info(
+                    'Prompt template already exists in Langfuse.',
+                    template_name=prompt_name,
+                )
+            except NotFoundError:
+                with prompt_file.open('r', encoding='utf-8') as f:
+                    prompt_content = f.read()
+                self.langfuse.create_prompt(
+                    name=prompt_name,
+                    prompt=prompt_content,
+                    type='text',
+                    labels=['production'],
+                )
+                _logger.info(
+                    'Created prompt template in Langfuse.', template_name=prompt_name
+                )
 
     def get(self, name: str, **kwargs: str | Any) -> str:
         """Get a prompt template by name
@@ -105,15 +140,11 @@ class PromptManager:
         if cached_prompt and cache_ttl > 0 and now - cached_prompt[0] < cache_ttl:
             prompt = cached_prompt[1]
         else:
-            prompt_content = self._read_local_prompt(name)
-            prompt = PromptTemplate.from_template(prompt_content)
+            prompt = self._read_local_prompt(name)
             if cache_ttl > 0:
                 self._local_prompt_cache[name] = (now, prompt)
 
-        if kwargs:
-            return prompt.format(**kwargs).strip()
-
-        return prompt.template.strip()
+        return TemplateParser.compile_template(prompt, kwargs).strip()
 
     def _read_local_prompt(self, name: str) -> str:
         """Read a local prompt template from the templates directory.

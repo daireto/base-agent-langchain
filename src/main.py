@@ -7,6 +7,7 @@ import sys
 from agents.uefa_agent.store import uefa_store
 from core.config import settings
 from core.logger import get_logger
+from core.prompt.manager import prompt_manager
 from presentation.api.app import create_default_app
 
 _logger = get_logger('main')
@@ -21,6 +22,8 @@ def main() -> int:
     Returns:
         int: Exit code (0 for success, non-zero for failure).
     """
+    prompt_manager.initialize_langfuse_prompts()
+
     if settings.presentation_mode == 'ui':
         try:
             from streamlit.web import cli as st_cli  # noqa: PLC0415
