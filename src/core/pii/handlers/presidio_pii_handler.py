@@ -26,7 +26,7 @@ _ENTITIES = [
     # 'IP_ADDRESS',
     # 'MAC_ADDRESS',
     # 'PERSON',
-    'PHONE_NUMBER',
+    # 'PHONE_NUMBER',
     'MEDICAL_LICENSE',
 ]
 
