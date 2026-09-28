@@ -2,12 +2,12 @@ from collections.abc import AsyncGenerator
 from contextlib import AsyncExitStack, asynccontextmanager
 from dataclasses import dataclass
 
-import aiosqlite
+from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langgraph.types import Checkpointer
 from sqlactive import DBConnection
 
-from agents.supervisor import Supervisor, build_supervisor
+from agents.supervisor.agent import Supervisor, build_supervisor
 from core.config import settings
 from core.memory.extractor.base_memory_extractor import BaseMemoryExtractor
 from core.memory.extractor.llm_memory_extractor import LLMMemoryExtractor
@@ -20,7 +20,6 @@ from core.pii.stream_transformers.base_stream_transformer import (
 )
 from core.pii.stream_transformers.pii_stream_transformer import PIIStreamTransformer
 from core.pii.vault import MemoryVault
-from core.prompt_manager import prompt_manager
 from persistence.database import init_database
 from persistence.repos.base_conversation_repository import BaseConversationRepository
 from persistence.repos.conversation_repository import ConversationRepository
@@ -38,6 +37,23 @@ class AppResources:
     pii_handler: BasePIIHandler
     stream_transformer: BasePIIStreamTransformer
     conversation_repo: BaseConversationRepository
+
+
+async def _setup_checkpointer(
+    stack: AsyncExitStack,
+) -> AsyncSqliteSaver | AsyncPostgresSaver:
+    conn_str = settings.supervisor.checkpointer_url.get_secret_value()
+
+    if settings.supervisor.engine == 'sqlite':
+        checkpointer = AsyncSqliteSaver.from_conn_string(conn_str)
+    elif settings.supervisor.engine == 'postgres':
+        checkpointer = AsyncPostgresSaver.from_conn_string(conn_str)
+    else:
+        raise ValueError(
+            f'Unsupported checkpointer engine: {settings.supervisor.engine}'
+        )
+
+    return await stack.enter_async_context(checkpointer)
 
 
 @asynccontextmanager
@@ -67,17 +83,12 @@ async def setup() -> AsyncGenerator[AppResources]:
     async with AsyncExitStack() as stack:
         db = await stack.enter_async_context(init_database())
 
-        checkpointer_conn = await stack.enter_async_context(
-            aiosqlite.connect(settings.supervisor.checkpointer_url.get_secret_value())
-        )
-
-        checkpointer = AsyncSqliteSaver(checkpointer_conn)
+        checkpointer = await _setup_checkpointer(stack)
+        await checkpointer.setup()
 
         memory_store = ChromaMemoryStore()
-        memory_extractor = LLMMemoryExtractor(
-            settings.memory_extractor,
-            system_prompt=prompt_manager.get('memory_extractor_prompt'),
-        )
+        await memory_store.init_collection()
+        memory_extractor = LLMMemoryExtractor(settings.memory_extractor)
 
         pii_handler = PresidioPIIHandler(
             vault=MemoryVault(),
