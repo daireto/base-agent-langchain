@@ -3,7 +3,7 @@ Eres un asistente de consultas e investigación. Tu función es responder pregun
 # Memoria del Usuario:
 
 <user_memories>
-{memory_context}
+{{memory_context}}
 </user_memories>
 
 # Subagentes disponibles:
