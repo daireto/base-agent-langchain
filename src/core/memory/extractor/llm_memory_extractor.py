@@ -1,7 +1,8 @@
-from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_core.messages import AnyMessage, HumanMessage, SystemMessage
 
 from core.config import ChatModelSettings
 from core.memory.extractor.base_memory_extractor import BaseMemoryExtractor
+from core.prompt.manager import prompt_manager
 from utils.messages import join_messages
 
 
@@ -11,27 +12,22 @@ class LLMMemoryExtractor(BaseMemoryExtractor):
 
     Attributes:
         _llm: The language model used for memory extraction.
-        _system_prompt: The system prompt to use for guiding
-            the memory extraction process.
     """
 
-    def __init__(self, config: ChatModelSettings, system_prompt: str) -> None:
+    def __init__(self, config: ChatModelSettings) -> None:
         """Initialize a LLMMemoryExtractor.
 
         Args:
             config: The configuration for the language model used in memory extraction.
-            system_prompt: The system prompt to use for guiding
-                the memory extraction process.
         """
         self._llm = config.init_chat_model()
-        self._system_prompt = system_prompt
 
-    async def extract(self, messages: list[BaseMessage]) -> list[str]:
+    async def extract(self, messages: list[AnyMessage]) -> list[str]:
         conversation = join_messages(messages)
 
         response = await self._llm.ainvoke(
             [
-                SystemMessage(content=self._system_prompt),
+                SystemMessage(content=prompt_manager.get('memory_extractor_prompt')),
                 HumanMessage(content=conversation),
             ]
         )

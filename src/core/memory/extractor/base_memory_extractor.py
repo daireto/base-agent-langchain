@@ -1,13 +1,13 @@
 from abc import ABC, abstractmethod
 
-from langchain_core.messages import BaseMessage
+from langchain_core.messages import AnyMessage
 
 
 class BaseMemoryExtractor(ABC):
     """Base class for memory extractors."""
 
     @abstractmethod
-    async def extract(self, messages: list[BaseMessage]) -> list[str]:
+    async def extract(self, messages: list[AnyMessage]) -> list[str]:
         """Extract relevant information from a list of messages.
 
         Args:
@@ -20,6 +20,6 @@ class BaseMemoryExtractor(ABC):
             >>> extractor = SomeMemoryExtractor()
             >>> messages = [HumanMessage(content="My name is John."), HumanMessage(content="I like programming.")]
             >>> memories = await extractor.extract(messages)
-            >>> print(memories)
+            >>> memories
             ['User is named John', 'Likes programming']
         """
