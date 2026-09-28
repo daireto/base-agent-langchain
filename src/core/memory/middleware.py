@@ -17,6 +17,7 @@ from langgraph.runtime import Runtime
 from core.definitions import DEFAULT_USER_ID
 from core.memory.extractor.base_memory_extractor import BaseMemoryExtractor
 from core.memory.store.base_memory_store import BaseMemoryStore
+from core.prompt.manager import prompt_manager
 from utils.messages import get_last_user_message
 
 
@@ -29,14 +30,12 @@ class MemoryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Response
     Attributes:
         _memory_store: The memory store used to save and retrieve memories.
         _memory_extractor: The memory extractor used to extract memories from messages.
-        _system_prompt: The system prompt template used to format the memory context.
     """
 
     def __init__(
         self,
         memory_store: BaseMemoryStore,
         memory_extractor: BaseMemoryExtractor,
-        system_prompt: str,
     ) -> None:
         """Initialize the MemoryMiddleware.
 
@@ -44,11 +43,9 @@ class MemoryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Response
             memory_store: The memory store used to save and retrieve memories.
             memory_extractor: The memory extractor used to extract memories
                 from messages.
-            system_prompt: The system prompt template used to format the memory context.
         """
         self._memory_store = memory_store
         self._memory_extractor = memory_extractor
-        self._system_prompt = system_prompt
 
     @override
     async def awrap_model_call(
@@ -68,7 +65,10 @@ class MemoryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Response
             request.messages, request.runtime
         ):
             system_msg = SystemMessage(
-                self._system_prompt.format(memory_context=memory_context)
+                content=prompt_manager.get(
+                    'supervisor_prompt',
+                    memory_context=memory_context,
+                )
             )
             return await handler(request.override(system_message=system_msg))
 
