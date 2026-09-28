@@ -32,6 +32,7 @@ def langchain_message_to_message_model(lc_message: LCMessage) -> Message:
 
     return Message(
         role=MessageRole(lc_message.type),
+        provided_id=lc_message.id,
         content=lc_message.content,
         name=lc_message.name,
         additional_kwargs=lc_message.additional_kwargs,
@@ -58,6 +59,7 @@ def message_model_to_langchain_message(message_model: Message) -> LCMessage:
     """
     if message_model.role == MessageRole.AI:
         return AIMessage(
+            id=message_model.provided_id,
             content=message_model.content,
             name=message_model.name,
             additional_kwargs=message_model.additional_kwargs or {},
@@ -69,6 +71,7 @@ def message_model_to_langchain_message(message_model: Message) -> LCMessage:
 
     if message_model.role == MessageRole.HUMAN:
         return HumanMessage(
+            id=message_model.provided_id,
             content=message_model.content,
             name=message_model.name,
             additional_kwargs=message_model.additional_kwargs or {},
@@ -77,6 +80,7 @@ def message_model_to_langchain_message(message_model: Message) -> LCMessage:
 
     if message_model.role == MessageRole.TOOL:
         return ToolMessage(
+            id=message_model.provided_id,
             content=message_model.content,
             name=message_model.name,
             additional_kwargs=message_model.additional_kwargs or {},
