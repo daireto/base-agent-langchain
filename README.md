@@ -7,6 +7,8 @@ Extensible template and reference base for building production-oriented agents w
 
 The project is deliberately structured as an extensible base rather than a single-purpose chatbot. It includes conversation checkpoints, conversation persistence, semantic user memory, PII protection, prompt versioning, human approval for sensitive tools, Langfuse tracing, and two presentation modes: FastAPI and Streamlit.
 
+![Streamlit Demo](<data/images/streamlit demo.gif>)
+
 ## 📚 Contents
 
 - [Base Agent LangChain](#base-agent-langchain)
