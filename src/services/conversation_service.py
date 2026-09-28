@@ -42,39 +42,39 @@ class ConversationService:
             The DTO containing the details of the created conversation.
         """
         conversation = await self._conversation_repo.create_conversation(
+            pk=request.pk,
             user_id=request.user_id,
-            thread_id=request.thread_id,
             title=request.title,
             description=request.description,
         )
         return ConversationResponse.model_validate(conversation)
 
     @overload
-    async def get_user_conversations(
+    async def get_conversations(
         self,
-        user_id: str,
+        user_id: str | None = None,
         limit: int = DEFAULT_LIMIT,
         skip: int = 0,
         with_count: Literal[False] = False,
     ) -> list[ConversationResponse]: ...
 
     @overload
-    async def get_user_conversations(
+    async def get_conversations(
         self,
-        user_id: str,
+        user_id: str | None = None,
         limit: int = DEFAULT_LIMIT,
         skip: int = 0,
         with_count: Literal[True] = True,
     ) -> tuple[list[ConversationResponse], int]: ...
 
-    async def get_user_conversations(
+    async def get_conversations(
         self,
-        user_id: str,
+        user_id: str | None = None,
         limit: int = DEFAULT_LIMIT,
         skip: int = 0,
         with_count: bool = False,
     ) -> list[ConversationResponse] | tuple[list[ConversationResponse], int]:
-        """Return the conversations that belong to a user.
+        """Return a paginated list of conversations.
 
         Args:
             user_id: The ID of the user whose conversations will be retrieved.
@@ -84,9 +84,10 @@ class ConversationService:
                 along with the list.
 
         Returns:
-            The list of conversations for the user, and optionally the total count.
+            The list of conversations, or a tuple containing the list
+            of conversations and the total count if with_count is True.
         """
-        result = await self._conversation_repo.get_user_conversations(
+        result = await self._conversation_repo.get_conversations(
             user_id=user_id,
             limit=limit,
             skip=skip,
@@ -116,27 +117,6 @@ class ConversationService:
         conversation = await self._conversation_repo.get_conversation(conversation_id)
         if not conversation:
             raise ConversationNotFoundError(conversation_id)
-        return ConversationResponse.model_validate(conversation)
-
-    async def get_conversation_by_thread_id(
-        self, thread_id: str
-    ) -> ConversationResponse:
-        """Return a conversation by its thread identifier.
-
-        Args:
-            thread_id: The thread ID associated with the conversation.
-
-        Returns:
-            The DTO containing the details of the conversation.
-
-        Raises:
-            ConversationNotFoundError: If no conversation matches the thread ID.
-        """
-        conversation = await self._conversation_repo.get_conversation_by_thread_id(
-            thread_id
-        )
-        if not conversation:
-            raise ConversationNotFoundError(thread_id)
         return ConversationResponse.model_validate(conversation)
 
     async def update_conversation(
