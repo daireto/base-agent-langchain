@@ -13,9 +13,13 @@ from chromadb import (
     QueryResult,
 )
 from chromadb.api.models.AsyncCollection import AsyncCollection
+from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
 
 from core.config import settings
 from core.memory.store.base_memory_store import BaseMemoryStore
+
+default_ef = DefaultEmbeddingFunction()
+default_ef(['init'])
 
 
 class Memory(TypedDict):
@@ -85,13 +89,21 @@ class _ChromaCollectionMixin:
             limit=k,
         )
 
+    async def init_collection(self) -> None:
+        """Initialize the ChromaDB collection."""
+        await self._get_collection()
+
     async def _get_collection(self) -> Collection | AsyncCollection:
         client = await self._get_client()
         if isinstance(client, AsyncClientAPI):
             return await client.get_or_create_collection(
-                settings.memories.collection_name
+                name=settings.memories.collection_name,
+                embedding_function=default_ef,  # type: ignore
             )
-        return client.get_or_create_collection(settings.memories.collection_name)
+        return client.get_or_create_collection(
+            name=settings.memories.collection_name,
+            embedding_function=default_ef,  # type: ignore
+        )
 
     async def _get_client(self) -> ClientAPI | AsyncClientAPI:
         if settings.chroma.mode == 'server':
