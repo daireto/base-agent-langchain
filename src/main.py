@@ -1,3 +1,7 @@
+import os
+
+os.environ['LANGGRAPH_STRICT_MSGPACK'] = 'true'
+
 import sys
 
 from agents.uefa_agent.store import uefa_store
