@@ -19,16 +19,16 @@ class BaseConversationRepository(ABC):
     @abstractmethod
     async def create_conversation(
         self,
+        pk: UUID,
         user_id: str,
-        thread_id: str,
         title: str | None = None,
         description: str | None = None,
     ) -> Conversation:
         """Create a new conversation.
 
         Args:
+            pk: Primary key.
             user_id: The ID of the user creating the conversation.
-            thread_id: The ID of the thread to which the conversation belongs.
             title: The title of the conversation.
             description: The description of the conversation.
 
@@ -37,43 +37,43 @@ class BaseConversationRepository(ABC):
         """
 
     @overload
-    async def get_user_conversations(
+    async def get_conversations(
         self,
-        user_id: str,
+        user_id: str | None = None,
         limit: int = DEFAULT_LIMIT,
         skip: int = 0,
         with_count: Literal[False] = False,
     ) -> list[Conversation]: ...
 
     @overload
-    async def get_user_conversations(
+    async def get_conversations(
         self,
-        user_id: str,
+        user_id: str | None = None,
         limit: int = DEFAULT_LIMIT,
         skip: int = 0,
         with_count: Literal[True] = True,
     ) -> tuple[list[Conversation], int]: ...
 
     @abstractmethod
-    async def get_user_conversations(
+    async def get_conversations(
         self,
-        user_id: str,
+        user_id: str | None = None,
         limit: int = DEFAULT_LIMIT,
         skip: int = 0,
         with_count: bool = False,
     ) -> list[Conversation] | tuple[list[Conversation], int]:
-        """Get all conversations for a user.
+        """List all conversations.
 
         Args:
-            user_id: The ID of the user.
+            user_id: The ID of the user whose conversations will be retrieved.
             limit: The maximum number of conversations to return.
             skip: The number of conversations to skip.
             with_count: Whether to return the total count of conversations
                 along with the list.
 
         Returns:
-            A list of Conversation objects for the user, or a tuple containing
-            the list of Conversation objects and the total count of conversations
+            A list of Conversation objects, or a tuple containing the list
+            of Conversation objects and the total count of conversations
             if with_count is True.
         """
 
@@ -83,19 +83,6 @@ class BaseConversationRepository(ABC):
 
         Args:
             conversation_id: The ID of the conversation.
-
-        Returns:
-            The Conversation object if found, else None.
-        """
-
-    @abstractmethod
-    async def get_conversation_by_thread_id(
-        self, thread_id: str
-    ) -> Conversation | None:
-        """Get a conversation by its thread ID.
-
-        Args:
-            thread_id: The ID of the thread.
 
         Returns:
             The Conversation object if found, else None.

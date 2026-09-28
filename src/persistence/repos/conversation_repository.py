@@ -24,40 +24,40 @@ class ConversationRepository(BaseConversationRepository):
 
     async def create_conversation(
         self,
+        pk: UUID,
         user_id: str,
-        thread_id: str,
         title: str | None = None,
         description: str | None = None,
     ) -> Conversation:
         conversation = Conversation(
+            id=pk,
             user_id=user_id,
-            thread_id=thread_id,
             title=title,
             description=description,
         )
         return await conversation.save()
 
     @overload
-    async def get_user_conversations(
+    async def get_conversations(
         self,
-        user_id: str,
+        user_id: str | None = None,
         limit: int = DEFAULT_LIMIT,
         skip: int = 0,
         with_count: Literal[False] = False,
     ) -> list[Conversation]: ...
 
     @overload
-    async def get_user_conversations(
+    async def get_conversations(
         self,
-        user_id: str,
+        user_id: str | None = None,
         limit: int = DEFAULT_LIMIT,
         skip: int = 0,
         with_count: Literal[True] = True,
     ) -> tuple[list[Conversation], int]: ...
 
-    async def get_user_conversations(
+    async def get_conversations(
         self,
-        user_id: str,
+        user_id: str | None = None,
         limit: int = DEFAULT_LIMIT,
         skip: int = 0,
         with_count: bool = False,
@@ -65,11 +65,12 @@ class ConversationRepository(BaseConversationRepository):
         if limit <= 0:
             limit = DEFAULT_LIMIT
 
-        query = (
-            Conversation.where(Conversation.user_id == user_id)
-            .order_by('-last_message_at')
-            .limit(limit)
-        )
+        if user_id:
+            query = Conversation.where(Conversation.user_id == user_id)
+        else:
+            query = Conversation.find()
+
+        query = query.order_by('-last_message_at').limit(limit)
 
         if skip > 0:
             query = query.offset(skip)
@@ -84,11 +85,6 @@ class ConversationRepository(BaseConversationRepository):
 
     async def get_conversation(self, conversation_id: UUID) -> Conversation | None:
         return await Conversation.get(conversation_id)
-
-    async def get_conversation_by_thread_id(
-        self, thread_id: str
-    ) -> Conversation | None:
-        return await Conversation.where(Conversation.thread_id == thread_id).one()
 
     async def update_conversation(
         self,
@@ -132,6 +128,13 @@ class ConversationRepository(BaseConversationRepository):
             raise ConversationNotFoundError(conversation_id)
 
         message = langchain_message_to_message_model(lc_message)
+        if (
+            existing := await Message.where(Message.provided_id == message.provided_id)
+            .where(Message.conversation_id == conversation_id)
+            .one_or_none()
+        ):
+            return existing
+
         message.conversation_id = conversation_id
 
         if interrupts:
@@ -159,7 +162,9 @@ class ConversationRepository(BaseConversationRepository):
         command: AgentInterruptCommand,
         reviewer_id: str | None = None,
     ) -> Interrupt:
-        interrupt = await Interrupt.where(Interrupt.execution_id == execution_id).one()
+        interrupt = await Interrupt.where(
+            Interrupt.execution_id == execution_id
+        ).one_or_none()
         if not interrupt:
             raise InterruptNotFoundError(execution_id)
 
