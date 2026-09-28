@@ -1,9 +1,9 @@
 """Utility functions for handling LangChain messages."""
 
-from langchain_core.messages import AIMessage, AnyMessage, BaseMessage, HumanMessage
+from langchain_core.messages import AIMessage, AnyMessage, HumanMessage
 
 
-def join_messages(messages: list[BaseMessage]) -> str:
+def join_messages(messages: list[AnyMessage]) -> str:
     """Join a list of messages into a single string.
 
     Args:
@@ -15,7 +15,7 @@ def join_messages(messages: list[BaseMessage]) -> str:
     return '\n'.join(f'{msg.type}: {msg.content}' for msg in messages)
 
 
-def get_last_message_by_type[T: BaseMessage](
+def get_last_message_by_type[T: AnyMessage](
     message_type: type[T],
     messages: list[AnyMessage],
 ) -> tuple[T | None, int | None]:
@@ -52,3 +52,11 @@ def get_last_ai_message(
 ) -> tuple[AIMessage | None, int | None]:
     """Get the last AI message from the list of messages."""
     return get_last_message_by_type(AIMessage, messages)
+
+
+def get_messages_from_user_msg(messages: list[AnyMessage]) -> list[AnyMessage]:
+    """Get all messages from the last user message."""
+    for i in range(len(messages) - 1, -1, -1):
+        if isinstance(messages[i], HumanMessage):
+            return messages[i:]
+    return messages
