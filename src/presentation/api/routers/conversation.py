@@ -30,14 +30,17 @@ async def create_conversation(
     return await service.create_conversation(data)
 
 
-@router.get('/user/{user_id}')
-async def get_user_conversations(
-    request: Request, user_id: str, page: int = 1, limit: int = DEFAULT_LIMIT
+@router.get('/')
+async def get_conversations(
+    request: Request,
+    user_id: str | None = None,
+    page: int = 1,
+    limit: int = DEFAULT_LIMIT,
 ) -> Pagination[ConversationResponse]:
-    """Get the conversations associated with a specific user."""
+    """Get a paginated list of conversations."""
     service: ConversationService = request.app.state.conversation_service
     skip = compute_skip(page, limit)
-    conversations, count = await service.get_user_conversations(
+    conversations, count = await service.get_conversations(
         user_id=user_id,
         limit=limit,
         skip=skip,
@@ -51,15 +54,6 @@ async def get_user_conversations(
         total=count,
         total_pages=total_pages,
     )
-
-
-@router.get('/thread/{thread_id}')
-async def get_conversation_by_thread_id(
-    request: Request, thread_id: str
-) -> ConversationResponse:
-    """Get a specific conversation by its thread ID."""
-    service: ConversationService = request.app.state.conversation_service
-    return await service.get_conversation_by_thread_id(thread_id)
 
 
 @router.get('/{conversation_id}')

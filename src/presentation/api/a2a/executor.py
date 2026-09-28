@@ -11,11 +11,11 @@ from a2a.server.events import EventQueue
 from a2a.server.tasks import TaskUpdater
 from a2a.types import Task, TaskState
 from langchain_core.messages import AIMessage
+from uuid_utils.compat import uuid7
 
 from agents.context import Context
 from dtos.agent import AgentInput, AgentRequest
 from services.agent_service import AgentService
-from utils.uuid import str_uuid7
 
 
 class A2AAgentExecutor(AgentExecutor):
@@ -56,7 +56,7 @@ class A2AAgentExecutor(AgentExecutor):
 
         if query:
             request = AgentRequest(
-                thread_id=context.context_id or str_uuid7(),
+                thread_id=context.context_id or uuid7(),
                 input=AgentInput(query=query),
             )
             await self._handle_stream(updater, request, metadata)

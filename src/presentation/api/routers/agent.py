@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, Request
 from fastapi.sse import EventSourceResponse, ServerSentEvent
+from uuid_utils.compat import UUID
 
 from dtos.agent import AgentRequest, AgentResponse, AgentStateResponse
 
@@ -39,7 +40,7 @@ async def stream(
 
 
 @router.get('/state/{thread_id}')
-async def get_state(request: Request, thread_id: str) -> AgentStateResponse:
+async def get_state(request: Request, thread_id: UUID) -> AgentStateResponse:
     """Get the current state of the agent for a specific thread."""
     agent_service: AgentService = request.app.state.agent_service
     state = await agent_service.get_state(thread_id)

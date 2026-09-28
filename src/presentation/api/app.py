@@ -83,7 +83,7 @@ def register_middlewares(app: FastAPI, include_rate_limit: bool = True) -> None:
     if include_rate_limit:
         app.add_middleware(
             RateLimitMiddleware,
-            storage_uri=settings.rest_rate_limit.storage_uri.get_secret_value(),
+            storage_uri=settings.rest_rate_limit.storage_url.get_secret_value(),
             root_limit=settings.rest_rate_limit.root_limit,
         )
 
@@ -134,7 +134,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
 
 
 def create_app(
-    logs_filepath: str | None = None,
+    logs_dirpath: str | None = None,
 ) -> FastAPI:
     """Create the FastAPI application.
 
@@ -142,7 +142,7 @@ def create_app(
     Middlewares are not registered here.
 
     Args:
-        logs_filepath: Filepath for log rotation.
+        logs_dirpath: Directory path for log rotation.
 
     Returns:
         A FastAPI application instance.
@@ -155,7 +155,7 @@ def create_app(
 
     setup_app_logger(
         app=app,
-        filepath=logs_filepath,
+        dirpath=logs_dirpath,
     )
     register_routers(app)
 
@@ -165,7 +165,7 @@ def create_app(
 def create_default_app() -> FastAPI:
     """Calls create_app() and register the middlewares."""
     app = create_app(
-        logs_filepath=settings.rest_log.path
+        logs_dirpath=settings.rest_log.path
         if not settings.rest_server.is_dev
         else None,
     )

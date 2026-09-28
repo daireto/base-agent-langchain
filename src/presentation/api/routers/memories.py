@@ -18,7 +18,10 @@ router = APIRouter(
 async def get_user_memories(
     request: Request, user_id: str = DEFAULT_USER_ID
 ) -> MemoriesResponse:
-    """Get the memories associated with a specific user."""
+    """Get all memories for a user.
+
+    If no user_id is provided, the default user ID will be used.
+    """
     memory_service: MemoryService = request.app.state.memory_service
     memories = await memory_service.get_user_memories(user_id)
     return MemoriesResponse(memories=memories, user_id=user_id)
