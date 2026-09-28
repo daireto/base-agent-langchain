@@ -29,6 +29,14 @@ class DatabaseConfig(BaseModel):
     url: Secret[str] = Secret('sqlite+aiosqlite:///.conversations.sqlite')
 
 
+class PromptConfig(BaseModel):
+    cache_ttl_seconds: int = 300
+
+
+class LangfuseConfig(BaseModel):
+    enabled: bool = False
+
+
 class MemoriesConfig(BaseModel):
     collection_name: str = 'memories'
 
@@ -101,7 +109,7 @@ class RestLogConfig(BaseModel):
 
 
 class RestRateLimitConfig(BaseModel):
-    storage_uri: Secret[str] = Secret('memory://')
+    storage_url: Secret[str] = Secret('memory://')
     root_limit: str = '5/second'
 
 
@@ -111,6 +119,7 @@ class RunnableConfig(BaseModel):
 
 
 class SupervisorConfig(ChatModelSettings):
+    engine: Literal['sqlite', 'postgres'] = 'sqlite'
     checkpointer_url: Secret[str] = Secret('.checkpoints.sqlite')
 
 
@@ -139,8 +148,6 @@ class QdrantConfig(BaseModel):
 class Settings(BaseSettings):
     presentation_mode: Literal['api', 'ui'] = 'api'
 
-    langfuse_enabled: bool = False
-
     virustotal_api_key: SecretStr
     abuseipdb_api_key: SecretStr
 
@@ -150,6 +157,8 @@ class Settings(BaseSettings):
     summarization: ChatModelSettings = ChatModelSettings()
     memory_extractor: ChatModelSettings = ChatModelSettings()
     database: DatabaseConfig = DatabaseConfig()
+    prompt: PromptConfig = PromptConfig()
+    langfuse: LangfuseConfig = LangfuseConfig()
     memories: MemoriesConfig = MemoriesConfig()
     ui: UIConfig = UIConfig()
     rest_server: RestServerConfig = RestServerConfig()
