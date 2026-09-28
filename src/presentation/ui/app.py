@@ -2,6 +2,7 @@ import asyncio
 
 import streamlit as st
 from langchain_core.messages import HumanMessage
+from uuid_utils.compat import uuid7
 
 from dtos.agent import AgentInput
 from presentation.ui.components.agent_runtime import get_runtime
@@ -15,14 +16,12 @@ from presentation.ui.components.interrupts import (
     render_interrupts,
 )
 from presentation.ui.components.sidebar import render_sidebar
-from presentation.ui.components.state import init_session_state
-from services.agent_service import AgentConfig, AgentRequest
-from utils.uuid import str_uuid7
-
-USER_ID = '123'
-CHAT_ID = '456'
-THREAD_ID = str_uuid7()
-CONFIG_REQUEST = AgentConfig(thread_id=THREAD_ID)
+from presentation.ui.components.state import (
+    init_state,
+    reset_state,
+    set_messages_and_interrupts,
+)
+from services.agent_service import AgentRequest
 
 runtime = get_runtime()
 
@@ -41,18 +40,25 @@ def process_user_message(prompt: str) -> None:
     st.session_state.messages.append(human)
     render_human(human)
 
+    thread_id = st.session_state.thread_id or uuid7()
+
     request = AgentRequest(
         input=AgentInput(
             query=prompt,
         ),
-        thread_id=THREAD_ID,
+        thread_id=thread_id,
     )
     stream = runtime.stream(request)
     render_streamed_ai(stream)
 
+    if not st.session_state.thread_id:
+        st.session_state.thread_id = thread_id
+        st.session_state.conversations = runtime.get_conversations()
+        st.rerun()
+
 
 def process_interrupts() -> None:
-    if not st.session_state.apply_interrupt_decisions:
+    if not st.session_state.thread_id or not st.session_state.apply_interrupt_decisions:
         return
 
     if not st.session_state.interrupts:
@@ -62,7 +68,7 @@ def process_interrupts() -> None:
     commands = get_interrupt_commands()
     request = AgentRequest(
         input=AgentInput(query='', commands=commands),
-        thread_id=THREAD_ID,
+        thread_id=st.session_state.thread_id,
     )
     stream = runtime.stream(request)
     render_streamed_ai(stream)
@@ -71,22 +77,30 @@ def process_interrupts() -> None:
 
 
 def run() -> None:
+    init_state()
+
     st.set_page_config(layout='wide', page_title='LangGraph Agent')
 
-    state = runtime.get_state(CONFIG_REQUEST)
-    state_response = runtime.parse_state_to_response(state)
+    if st.session_state.thread_id:
+        set_messages_and_interrupts(runtime)
 
-    init_session_state(
-        messages=state_response.messages,
-        interrupts=state_response.interrupts,
-    )
+    st.session_state.conversations = runtime.get_conversations()
 
-    on_clean = render_sidebar()
+    on_reset, selected_thread_id, deleted_thread_id = render_sidebar()
 
-    if on_clean:
-        runtime.clean_state(THREAD_ID)
-        st.session_state.messages.clear()
-        st.session_state.interrupts.clear()
+    if on_reset:
+        reset_state()
+        st.rerun()
+
+    if selected_thread_id:
+        st.session_state.thread_id = selected_thread_id
+        set_messages_and_interrupts(runtime)
+
+    if deleted_thread_id:
+        runtime.clean_state(deleted_thread_id)
+        runtime.delete_conversation(deleted_thread_id)
+        if st.session_state.thread_id == deleted_thread_id:
+            reset_state()
         st.rerun()
 
     col1, col2 = st.columns([2, 1])

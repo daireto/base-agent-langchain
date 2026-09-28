@@ -49,7 +49,7 @@ class Runtime[T]:
         >>> runtime.start()
         >>> response = runtime.submit(service.invoke(request))
         >>> for event in runtime.consume(service.stream, request):
-        ...     print(event)
+        ...     event.data
     """
 
     def __init__(self, thread_name: str, ctx: AbstractAsyncContextManager[T]) -> None:

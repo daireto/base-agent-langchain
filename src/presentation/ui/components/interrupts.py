@@ -39,6 +39,14 @@ def render_interrupt(interrupt: AgentToolInterrupt) -> None:
     with st.container(border=True):
         st.subheader(interrupt.name)
         st.caption(interrupt.description)
+        st.code(
+            json.dumps(
+                interrupt.args,
+                indent=2,
+                ensure_ascii=False,
+            ),
+            language='json',
+        )
 
         decision = st.selectbox(
             'Decisión',
