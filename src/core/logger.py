@@ -55,6 +55,7 @@ processors = [
     structlog.processors.StackInfoRenderer(),
     structlog.processors.format_exc_info,
     structlog.processors.UnicodeDecoder(),
+    structlog.stdlib.PositionalArgumentsFormatter(),
     structlog.stdlib.render_to_log_kwargs,
 ]
 
@@ -122,7 +123,7 @@ DEFAULT_BACKUP_COUNT = 5  # Number of backup files to keep
 
 def setup_log_rotation(
     loggers: list[structlog.stdlib.BoundLogger | logging.Logger | str],
-    filepath: str,
+    dirpath: str,
     max_bytes: int = DEFAULT_MAX_BYTES,
     backup_count: int = DEFAULT_BACKUP_COUNT,
     formatter: logging.Formatter | None = None,
@@ -131,15 +132,16 @@ def setup_log_rotation(
 
     Args:
         loggers: A list of loggers to set up log rotation for. Can be logger instances or logger names.
-        filepath: The path to the log file.
+        dirpath: The path to the log directory.
         max_bytes: The maximum size of the log file before it is rotated.
         backup_count: The number of backup files to keep.
         formatter: The formatter to use for the log file. Defaults to None.
     """
-    path = Path(filepath)
-    path.parent.mkdir(parents=True, exist_ok=True)
+    path = Path(dirpath)
+    path.mkdir(parents=True, exist_ok=True)
+
     file_handler = RotatingFileHandler(
-        filepath,
+        path / 'app.log',
         maxBytes=max_bytes,
         backupCount=backup_count,
     )
@@ -156,7 +158,7 @@ def setup_log_rotation(
 
 def setup_app_logger(
     app: Starlette,
-    filepath: str | None = None,
+    dirpath: str | None = None,
     max_bytes: int = DEFAULT_MAX_BYTES,
     backup_count: int = DEFAULT_BACKUP_COUNT,
 ) -> None:
@@ -164,17 +166,17 @@ def setup_app_logger(
 
     Args:
         app: The Starlette application instance.
-        filepath: The path to the log file. Defaults to None.
+        dirpath: The path to the log directory. Defaults to None.
         max_bytes: The maximum size of the log file before it is rotated.
         backup_count: The number of backup files to keep.
     """
     app.state.logger = default_app_logger
     app.state.get_child_logger = get_app_logger
 
-    if filepath:
+    if dirpath:
         setup_log_rotation(
             loggers=[default_app_logger],
-            filepath=filepath,
+            dirpath=dirpath,
             max_bytes=max_bytes,
             backup_count=backup_count,
             formatter=default_json_formatter,
