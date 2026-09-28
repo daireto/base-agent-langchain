@@ -1,6 +1,6 @@
 # Base Agent LangChain
 
-Reference implementation of a LangChain/LangGraph application with a supervisor agent and two specialist agents:
+Extensible template and reference base for building production-oriented agents with LangChain and LangGraph. It provides a supervisor architecture, reusable integrations, and two example specialist agents:
 
 - **UEFA agent**: answers questions about UEFA football competitions using a hybrid RAG pipeline.
 - **SOC agent**: performs security-oriented tasks such as IP reputation checks, indicator analysis, and IP blacklist management.
